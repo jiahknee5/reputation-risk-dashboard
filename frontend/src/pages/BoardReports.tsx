@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import RiskGauge from '../components/RiskGauge'
-import DemoBanner from '../components/DemoBanner'
-import { getBoardReport } from '../data/demo'
+import ExportButton from '../components/ExportButton'
+import { getBoardReport } from '../services/api'
 
 function priorityBadge(priority: string) {
   const colors: Record<string, string> = {
@@ -26,8 +26,6 @@ export default function BoardReports() {
         <p className="text-sm text-gray-500 mt-1">Executive summary for board and risk committee review</p>
       </div>
 
-      <DemoBanner />
-
       {/* Report header */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
@@ -35,9 +33,31 @@ export default function BoardReports() {
             <h3 className="text-lg font-semibold text-white">Reputation Risk Assessment</h3>
             <p className="text-xs text-gray-500 mt-1">Reporting Period: {report.period}</p>
           </div>
-          <div className="text-right">
-            <p className="text-xs text-gray-500">Report Generated</p>
-            <p className="text-sm text-gray-400">{report.report_date}</p>
+          <div className="flex items-center gap-2">
+            <ExportButton
+              data={report.banks.map(b => ({
+                Institution: b.bank.name,
+                Ticker: b.bank.ticker,
+                Composite: b.composite_score,
+                Media: b.media_sentiment_score,
+                Complaints: b.complaint_score,
+                Market: b.market_score,
+                TopDriver: b.top_drivers[0]?.name,
+              }))}
+              filename={`board-report-${report.report_date}`}
+              format="csv"
+              label="Export CSV"
+            />
+            <ExportButton
+              data={JSON.stringify(report)}
+              filename={`board-report-${report.report_date}`}
+              format="json"
+              label="Export JSON"
+            />
+            <div className="text-right ml-2">
+              <p className="text-xs text-gray-500">Report Generated</p>
+              <p className="text-sm text-gray-400">{report.report_date}</p>
+            </div>
           </div>
         </div>
         <div className="bg-gray-800/50 rounded-lg p-4">

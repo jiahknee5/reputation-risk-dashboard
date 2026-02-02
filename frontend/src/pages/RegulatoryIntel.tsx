@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
-import DemoBanner from '../components/DemoBanner'
-import { getRegulatoryIntel } from '../data/demo'
+import { getRegulatoryIntel } from '../services/api'
 
 function severityDots(severity: number) {
   return (
@@ -43,8 +42,6 @@ export default function RegulatoryIntel() {
         <h2 className="text-2xl font-bold text-white">Regulatory Intelligence</h2>
         <p className="text-sm text-gray-500 mt-1">Enforcement actions, SEC filings, and regulatory risk indicators</p>
       </div>
-
-      <DemoBanner />
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

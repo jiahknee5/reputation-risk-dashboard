@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/reputation/',
+  base: process.env.VITE_BASE_PATH || '/reputation/',
   server: {
     port: 5173,
     proxy: {

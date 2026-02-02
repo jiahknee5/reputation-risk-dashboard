@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import RiskGauge from '../components/RiskGauge'
-import DemoBanner from '../components/DemoBanner'
-import { getPeerBenchmarking } from '../data/demo'
+import { getPeerBenchmarking } from '../services/api'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend,
@@ -32,8 +31,6 @@ export default function PeerBenchmarking() {
         <h2 className="text-2xl font-bold text-white">Peer Benchmarking</h2>
         <p className="text-sm text-gray-500 mt-1">Cross-institution risk comparison and relative positioning</p>
       </div>
-
-      <DemoBanner />
 
       {/* Peer average banner */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">

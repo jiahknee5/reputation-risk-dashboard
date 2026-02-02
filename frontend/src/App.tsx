@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
+import FeedbackButton from './components/FeedbackButton'
 import Dashboard from './pages/Dashboard'
 import Monitoring from './pages/Monitoring'
 import RiskDetail from './pages/RiskDetail'
@@ -8,6 +9,8 @@ import RegulatoryIntel from './pages/RegulatoryIntel'
 import CrisisSimulation from './pages/CrisisSimulation'
 import StakeholderImpact from './pages/StakeholderImpact'
 import BoardReports from './pages/BoardReports'
+import Feedback from './pages/Feedback'
+import ClawdChat from './pages/ClawdChat'
 
 export default function App() {
   return (
@@ -23,7 +26,10 @@ export default function App() {
           <Route path="/crisis" element={<CrisisSimulation />} />
           <Route path="/stakeholders" element={<StakeholderImpact />} />
           <Route path="/reports" element={<BoardReports />} />
+          <Route path="/feedback" element={<Feedback />} />
+          <Route path="/chat" element={<ClawdChat />} />
         </Routes>
+        <FeedbackButton />
       </main>
     </div>
   )

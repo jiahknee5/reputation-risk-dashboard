@@ -1,6 +1,5 @@
-import { useState, useMemo } from 'react'
-import DemoBanner from '../components/DemoBanner'
-import { getBanks, getSignals, getSignalVolume } from '../data/demo'
+import { useState, useMemo, useEffect } from 'react'
+import { getBanks, getSignals, getSignalVolume } from '../services/api'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts'
@@ -37,8 +36,12 @@ function sourceBadge(source: string) {
 export default function Monitoring() {
   const [selectedBank, setSelectedBank] = useState<number | undefined>(undefined)
   const banks = useMemo(() => getBanks(), [])
-  const signals = useMemo(() => getSignals(selectedBank, 100), [selectedBank])
+  const [signals, setSignals] = useState<Awaited<ReturnType<typeof getSignals>>>([])
   const volume = useMemo(() => getSignalVolume(selectedBank), [selectedBank])
+
+  useEffect(() => {
+    getSignals(selectedBank, 100).then(setSignals)
+  }, [selectedBank])
 
   // Aggregate volume by date for chart
   const volumeByDate = useMemo(() => {
@@ -72,8 +75,6 @@ export default function Monitoring() {
           ))}
         </select>
       </div>
-
-      <DemoBanner />
 
       {/* Volume chart */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">

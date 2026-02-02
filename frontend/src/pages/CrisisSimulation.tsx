@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react'
-import DemoBanner from '../components/DemoBanner'
-import { getBanks, getCrisisSimulation } from '../data/demo'
+import { getBanks, getCrisisSimulation } from '../services/api'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
@@ -41,8 +40,6 @@ export default function CrisisSimulation() {
           ))}
         </select>
       </div>
-
-      <DemoBanner />
 
       {/* Monte Carlo projection */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">

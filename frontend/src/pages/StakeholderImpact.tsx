@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
-import DemoBanner from '../components/DemoBanner'
-import { getStakeholderImpact } from '../data/demo'
+import { getStakeholderImpact } from '../services/api'
 
 function impactBadge(level: string) {
   const colors: Record<string, string> = {
@@ -31,8 +30,6 @@ export default function StakeholderImpact() {
         <h2 className="text-2xl font-bold text-white">Stakeholder Impact Analysis</h2>
         <p className="text-sm text-gray-500 mt-1">Reputation risk exposure across key stakeholder groups by institution</p>
       </div>
-
-      <DemoBanner />
 
       {data.map((bankData) => (
         <div key={bankData.bank.id} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">

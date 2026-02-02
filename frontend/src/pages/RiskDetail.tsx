@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react'
 import RiskGauge from '../components/RiskGauge'
-import DemoBanner from '../components/DemoBanner'
-import { getBanks, getRiskDetail } from '../data/demo'
+import { getBanks, getRiskDetail } from '../services/api'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
@@ -41,8 +40,6 @@ export default function RiskDetail() {
           ))}
         </select>
       </div>
-
-      <DemoBanner />
 
       {/* Score overview */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

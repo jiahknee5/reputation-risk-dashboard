@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Activity, Shield, Users, BarChart3, AlertTriangle, FileText, Gauge } from 'lucide-react'
+import { LayoutDashboard, Activity, Shield, Users, BarChart3, AlertTriangle, FileText, Gauge, MessageSquare, Bot } from 'lucide-react'
 
 const navItems = [
   { to: '/', label: 'Executive Dashboard', icon: LayoutDashboard },
@@ -10,6 +10,8 @@ const navItems = [
   { to: '/crisis', label: 'Crisis Simulation', icon: AlertTriangle },
   { to: '/stakeholders', label: 'Stakeholder Impact', icon: BarChart3 },
   { to: '/reports', label: 'Board Reports', icon: FileText },
+  { to: '/feedback', label: 'Developer Feedback', icon: MessageSquare },
+  { to: '/chat', label: 'Ask Risk Analyst', icon: Bot },
 ]
 
 export default function Sidebar() {
@@ -17,7 +19,7 @@ export default function Sidebar() {
     <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col min-h-screen">
       <div className="p-4 border-b border-gray-800">
         <h1 className="text-lg font-bold text-white">RepRisk Intel</h1>
-        <p className="text-xs text-gray-500 mt-1">Reputation Risk Platform</p>
+        <p className="text-xs text-gray-500 mt-1">Reputation Risk Platform v2</p>
       </div>
       <nav className="flex-1 p-3 space-y-1">
         {navItems.map((item) => (
