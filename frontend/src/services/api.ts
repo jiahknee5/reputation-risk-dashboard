@@ -14,6 +14,7 @@ export type { BankInfo } from '../data/demo'
 const CFPB_API = 'https://www.consumerfinance.gov/data-research/consumer-complaints/search/api/v1/'
 const NEWSAPI_KEY = import.meta.env.VITE_NEWSAPI_KEY || ''
 const NEWSAPI_URL = 'https://newsapi.org/v2/everything'
+const USE_REAL_DATA = import.meta.env.VITE_USE_REAL_DATA === 'true' // Opt-in for real API calls
 
 // Cache to avoid redundant fetches
 const cache: Record<string, { data: unknown; ts: number }> = {}
@@ -268,6 +269,17 @@ export async function getDashboardOverview(): Promise<DashboardOverview[]> {
 
   const banks = demo.getBanks()
 
+  // If real data is not enabled, use demo data immediately
+  if (!USE_REAL_DATA) {
+    console.log('Real data disabled, using demo dashboard')
+    return demo.getDashboardOverview().map(d => ({
+      ...d,
+      regulatory_score: Math.round(d.composite_score + (Math.random() - 0.5) * 10),
+      esg_flags: [],
+      data_source: 'demo' as const,
+    }))
+  }
+
   try {
     // Fetch complaints and news for all banks in parallel
     const [allComplaints, allNews] = await Promise.all([
@@ -391,6 +403,12 @@ export async function getRiskHistory(bankId: number): Promise<ReturnType<typeof 
 }
 
 export async function getSignals(bankId?: number, limit = 100) {
+  // If real data is not enabled, use demo data immediately
+  if (!USE_REAL_DATA) {
+    console.log('Real data disabled (VITE_USE_REAL_DATA not set), using demo data')
+    return demo.getSignals(bankId, limit)
+  }
+
   const banks = bankId ? [demo.getBanks().find(b => b.id === bankId)!] : demo.getBanks()
   const liveSignals: ReturnType<typeof demo.getSignals> = []
   let id = 1
