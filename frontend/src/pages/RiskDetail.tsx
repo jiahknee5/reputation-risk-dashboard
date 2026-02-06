@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react'
 import RiskGauge from '../components/RiskGauge'
+import PageObjective from '../components/PageObjective'
+import InsightBox from '../components/InsightBox'
 import { getBanks, getRiskDetail } from '../services/api'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -23,13 +25,63 @@ export default function RiskDetail() {
   const [selectedBank, setSelectedBank] = useState(banks[0].id)
   const detail = useMemo(() => getRiskDetail(selectedBank), [selectedBank])
 
+  // Generate dynamic insight
+  const insight = useMemo(() => {
+    const score = detail.composite_score
+    const highAlerts = detail.alerts.filter(a => a.severity === 'high').length
+    const mediumAlerts = detail.alerts.filter(a => a.severity === 'medium').length
+    const topComponent = detail.components.reduce((max, c) => c.score > max.score ? c : max)
+
+    // Check trend (comparing most recent vs 30 days ago)
+    const recent = detail.history[detail.history.length - 1]?.composite_score || score
+    const monthAgo = detail.history[Math.max(0, detail.history.length - 30)]?.composite_score || score
+    const trendDelta = recent - monthAgo
+
+    if (highAlerts > 0) {
+      return {
+        type: 'action' as const,
+        title: `${detail.bank.ticker} has ${highAlerts} high-severity alert${highAlerts > 1 ? 's' : ''}`,
+        message: `Composite score ${Math.round(score)} with ${highAlerts} critical alert${highAlerts > 1 ? 's' : ''} requiring immediate attention.`,
+        detail: `Primary driver: ${topComponent.name} (${Math.round(topComponent.score)}). Trend: ${trendDelta > 0 ? 'worsening' : 'improving'} (${trendDelta > 0 ? '+' : ''}${Math.round(trendDelta)} vs 30d ago).`
+      }
+    } else if (score >= 70) {
+      return {
+        type: 'warning' as const,
+        title: `${detail.bank.ticker} elevated risk requires monitoring`,
+        message: `Composite score ${Math.round(score)} in elevated range. ${mediumAlerts} medium alerts pending.`,
+        detail: `Top component: ${topComponent.name} (${Math.round(topComponent.score)}). Close monitoring recommended.`
+      }
+    } else if (trendDelta >= 10) {
+      return {
+        type: 'warning' as const,
+        title: `${detail.bank.ticker} score trending upward`,
+        message: `Score increased ${Math.round(trendDelta)} points over 30 days (now ${Math.round(score)}).`,
+        detail: `Driver: ${topComponent.name}. Investigate underlying causes before escalation.`
+      }
+    } else if (score < 30) {
+      return {
+        type: 'positive' as const,
+        title: `${detail.bank.ticker} low risk profile`,
+        message: `Composite score ${Math.round(score)} well below threshold. No high-severity alerts.`,
+        detail: 'Continue current risk management practices.'
+      }
+    } else {
+      return {
+        type: 'finding' as const,
+        title: `${detail.bank.ticker} within normal range`,
+        message: `Composite score ${Math.round(score)}. ${detail.alerts.length} active alert${detail.alerts.length !== 1 ? 's' : ''}.`,
+        detail: `Primary driver: ${topComponent.name} (${Math.round(topComponent.score)}).`
+      }
+    }
+  }, [detail])
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Risk Score Detail</h2>
-          <p className="text-sm text-gray-500 mt-1">Component-level risk decomposition and trend analysis</p>
-        </div>
+    <div className="space-y-4">
+      <PageObjective
+        title="Risk Score Detail"
+        objective="Understand what's driving risk for a specific institution"
+        description="Component-level decomposition, trend analysis, and active alerts for deep-dive risk investigation."
+      >
         <select
           className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
           value={selectedBank}
@@ -39,15 +91,17 @@ export default function RiskDetail() {
             <option key={b.id} value={b.id}>{b.name} ({b.ticker})</option>
           ))}
         </select>
-      </div>
+      </PageObjective>
+
+      {insight && <InsightBox {...insight} />}
 
       {/* Score overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 flex flex-col items-center justify-center">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col items-center justify-center">
           <RiskGauge score={detail.composite_score} label="Composite Score" />
         </div>
 
-        <div className="lg:col-span-3 bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <div className="lg:col-span-3 bg-gray-900 border border-gray-800 rounded-xl p-4">
           <h3 className="text-sm font-medium text-gray-400 mb-4">Risk Component Breakdown</h3>
           <div className="space-y-4">
             {detail.components.map((c) => (
@@ -79,7 +133,7 @@ export default function RiskDetail() {
       </div>
 
       {/* Component trend chart */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
         <h3 className="text-sm font-medium text-gray-400 mb-4">60-Day Component Trend</h3>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={detail.history}>
@@ -97,7 +151,7 @@ export default function RiskDetail() {
       </div>
 
       {/* Active alerts */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
         <h3 className="text-sm font-medium text-gray-400 mb-4">Active Risk Alerts</h3>
         <div className="space-y-3">
           {detail.alerts.map((alert, i) => (

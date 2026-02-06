@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'
 import Monitoring from './pages/Monitoring'
 import RiskDetail from './pages/RiskDetail'
 import PeerBenchmarking from './pages/PeerBenchmarking'
+import PeerGroups from './pages/PeerGroups'
 import RegulatoryIntel from './pages/RegulatoryIntel'
 import CrisisSimulation from './pages/CrisisSimulation'
 import StakeholderImpact from './pages/StakeholderImpact'
@@ -23,6 +24,7 @@ export default function App() {
           <Route path="/monitoring" element={<Monitoring />} />
           <Route path="/risk-detail" element={<RiskDetail />} />
           <Route path="/peers" element={<PeerBenchmarking />} />
+          <Route path="/peer-groups" element={<PeerGroups />} />
           <Route path="/regulatory" element={<RegulatoryIntel />} />
           <Route path="/crisis" element={<CrisisSimulation />} />
           <Route path="/stakeholders" element={<StakeholderImpact />} />

@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Activity, Shield, Users, BarChart3, AlertTriangle, FileText, Gauge, MessageSquare, Bot, Database } from 'lucide-react'
+import { LayoutDashboard, Activity, Shield, Users, UserCog, BarChart3, AlertTriangle, FileText, Gauge, MessageSquare, Bot, Database } from 'lucide-react'
 
 const navItems = [
   { to: '/', label: 'Executive Dashboard', icon: LayoutDashboard },
   { to: '/monitoring', label: 'Real-Time Monitoring', icon: Activity },
   { to: '/risk-detail', label: 'Risk Score Detail', icon: Gauge },
   { to: '/peers', label: 'Peer Benchmarking', icon: Users },
+  { to: '/peer-groups', label: 'Peer Group Manager', icon: UserCog },
   { to: '/regulatory', label: 'Regulatory Intel', icon: Shield },
   { to: '/crisis', label: 'Crisis Simulation', icon: AlertTriangle },
   { to: '/stakeholders', label: 'Stakeholder Impact', icon: BarChart3 },
