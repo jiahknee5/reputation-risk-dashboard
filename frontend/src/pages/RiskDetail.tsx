@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import RiskGauge from '../components/RiskGauge'
 import PageObjective from '../components/PageObjective'
 import InsightBox from '../components/InsightBox'
@@ -6,6 +6,24 @@ import { getBanks, getRiskDetail } from '../services/api'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
+
+interface PeerGroup {
+  id: string
+  name: string
+  description: string
+  bankIds: number[]
+  createdAt: number
+  updatedAt: number
+}
+
+function loadPeerGroups(): PeerGroup[] {
+  try {
+    const stored = localStorage.getItem('reprisk-peer-groups')
+    return stored ? JSON.parse(stored) : []
+  } catch {
+    return []
+  }
+}
 
 function severityBadge(severity: string) {
   const colors: Record<string, string> = {
@@ -21,8 +39,25 @@ function severityBadge(severity: string) {
 }
 
 export default function RiskDetail() {
-  const banks = useMemo(() => getBanks(), [])
-  const [selectedBank, setSelectedBank] = useState(banks[0].id)
+  const allBanks = useMemo(() => getBanks(), [])
+  const [peerGroups, setPeerGroups] = useState<PeerGroup[]>([])
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('')
+
+  useEffect(() => {
+    setPeerGroups(loadPeerGroups())
+  }, [])
+
+  // Filter banks by peer group
+  const banks = useMemo(() => {
+    if (!selectedGroupId) return allBanks
+
+    const group = peerGroups.find(g => g.id === selectedGroupId)
+    if (!group) return allBanks
+
+    return allBanks.filter(b => group.bankIds.includes(b.id))
+  }, [allBanks, selectedGroupId, peerGroups])
+
+  const [selectedBank, setSelectedBank] = useState(banks[0]?.id || allBanks[0]?.id)
   const detail = useMemo(() => getRiskDetail(selectedBank), [selectedBank])
 
   // Generate dynamic insight
@@ -75,22 +110,45 @@ export default function RiskDetail() {
     }
   }, [detail])
 
+  const selectedGroup = peerGroups.find(g => g.id === selectedGroupId)
+
   return (
     <div className="space-y-4">
       <PageObjective
         title="Risk Score Detail"
         objective="Understand what's driving risk for a specific institution"
-        description="Component-level decomposition, trend analysis, and active alerts for deep-dive risk investigation."
+        description={`Component-level decomposition, trend analysis, and active alerts${selectedGroup ? ` — ${selectedGroup.name} peer group` : ' for all institutions'}.`}
       >
-        <select
-          className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
-          value={selectedBank}
-          onChange={(e) => setSelectedBank(Number(e.target.value))}
-        >
-          {banks.map((b) => (
-            <option key={b.id} value={b.id}>{b.name} ({b.ticker})</option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          <select
+            className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
+            value={selectedGroupId}
+            onChange={(e) => {
+              setSelectedGroupId(e.target.value)
+              // Reset to first bank in new group
+              const newBanks = e.target.value
+                ? allBanks.filter(b => peerGroups.find(g => g.id === e.target.value)?.bankIds.includes(b.id))
+                : allBanks
+              if (newBanks.length > 0) setSelectedBank(newBanks[0].id)
+            }}
+          >
+            <option value="">All Institutions ({allBanks.length})</option>
+            {peerGroups.map(group => (
+              <option key={group.id} value={group.id}>
+                {group.name} ({allBanks.filter(b => group.bankIds.includes(b.id)).length} banks)
+              </option>
+            ))}
+          </select>
+          <select
+            className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
+            value={selectedBank}
+            onChange={(e) => setSelectedBank(Number(e.target.value))}
+          >
+            {banks.map((b) => (
+              <option key={b.id} value={b.id}>{b.name} ({b.ticker})</option>
+            ))}
+          </select>
+        </div>
       </PageObjective>
 
       {insight && <InsightBox {...insight} />}

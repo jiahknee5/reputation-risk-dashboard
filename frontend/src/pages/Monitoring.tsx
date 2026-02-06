@@ -4,6 +4,25 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import PageObjective from '../components/PageObjective'
+import InsightBox from '../components/InsightBox'
+
+interface PeerGroup {
+  id: string
+  name: string
+  description: string
+  bankIds: number[]
+  createdAt: number
+  updatedAt: number
+}
+
+function loadPeerGroups(): PeerGroup[] {
+  try {
+    const stored = localStorage.getItem('reprisk-peer-groups')
+    return stored ? JSON.parse(stored) : []
+  } catch {
+    return []
+  }
+}
 
 function sentimentBadge(label: string | null, score: number | null) {
   if (!label) return null
@@ -38,8 +57,25 @@ export default function Monitoring() {
   const [selectedBank, setSelectedBank] = useState<number | undefined>(undefined)
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined)
   const [selectedSource, setSelectedSource] = useState<string | undefined>(undefined)
-  const banks = useMemo(() => getBanks(), [])
+  const allBanks = useMemo(() => getBanks(), [])
+  const [peerGroups, setPeerGroups] = useState<PeerGroup[]>([])
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('')
   const [allSignals, setAllSignals] = useState<Awaited<ReturnType<typeof getSignals>>>([])
+
+  useEffect(() => {
+    setPeerGroups(loadPeerGroups())
+  }, [])
+
+  // Filter banks by peer group
+  const banks = useMemo(() => {
+    if (!selectedGroupId) return allBanks
+
+    const group = peerGroups.find(g => g.id === selectedGroupId)
+    if (!group) return allBanks
+
+    return allBanks.filter(b => group.bankIds.includes(b.id))
+  }, [allBanks, selectedGroupId, peerGroups])
+
   const volume = useMemo(() => getSignalVolume(selectedBank), [selectedBank])
 
   useEffect(() => {
@@ -73,26 +109,55 @@ export default function Monitoring() {
     return Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date))
   }, [volume])
 
+  const selectedGroup = peerGroups.find(g => g.id === selectedGroupId)
+  const anomalyCount = signals.filter(s => s.is_anomaly).length
+
+  const insight = {
+    type: 'finding' as const,
+    title: `${signals.length} signal${signals.length !== 1 ? 's' : ''} detected${selectedGroup ? ` in ${selectedGroup.name}` : ''}`,
+    message: `Monitoring ${selectedGroup ? selectedGroup.name : `all ${allBanks.length} institutions`}. ${anomalyCount} anomal${anomalyCount !== 1 ? 'ies' : 'y'} flagged.`,
+    detail: selectedBank ? `Filtered to ${banks.find(b => b.id === selectedBank)?.ticker || 'selected bank'}` : `Showing ${banks.length} institution${banks.length !== 1 ? 's' : ''}`
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageObjective
         title="Real-Time Monitoring"
         objective="Detect emerging signals before they impact scores"
-        description="Real-time monitoring aggregates news, social media, regulatory filings, and market signals to identify reputation risks as they develop."
+        description={`Real-time signal aggregation${selectedGroup ? ` for ${selectedGroup.name}` : ' across all institutions'} — news, CFPB complaints, regulatory filings, and market signals.`}
       >
-        <select
-          className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
-          value={selectedBank ?? ''}
-          onChange={(e) => setSelectedBank(e.target.value ? Number(e.target.value) : undefined)}
-        >
-          <option value="">All Banks</option>
-          {banks.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.name} ({b.ticker})
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          <select
+            className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
+            value={selectedGroupId}
+            onChange={(e) => {
+              setSelectedGroupId(e.target.value)
+              setSelectedBank(undefined)
+            }}
+          >
+            <option value="">All Institutions ({allBanks.length})</option>
+            {peerGroups.map(group => (
+              <option key={group.id} value={group.id}>
+                {group.name} ({allBanks.filter(b => group.bankIds.includes(b.id)).length} banks)
+              </option>
+            ))}
+          </select>
+          <select
+            className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
+            value={selectedBank ?? ''}
+            onChange={(e) => setSelectedBank(e.target.value ? Number(e.target.value) : undefined)}
+          >
+            <option value="">All Banks ({banks.length})</option>
+            {banks.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name} ({b.ticker})
+              </option>
+            ))}
+          </select>
+        </div>
       </PageObjective>
+
+      <InsightBox {...insight} />
 
       {/* Volume chart */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">

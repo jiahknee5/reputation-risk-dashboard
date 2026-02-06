@@ -1,8 +1,28 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import PageObjective from '../components/PageObjective'
+import InsightBox from '../components/InsightBox'
 import { getBanks, getCrisisSimulation } from '../services/api'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
+
+interface PeerGroup {
+  id: string
+  name: string
+  description: string
+  bankIds: number[]
+  createdAt: number
+  updatedAt: number
+}
+
+function loadPeerGroups(): PeerGroup[] {
+  try {
+    const stored = localStorage.getItem('reprisk-peer-groups')
+    return stored ? JSON.parse(stored) : []
+  } catch {
+    return []
+  }
+}
 
 function impactBadge(impact: string) {
   const colors: Record<string, string> = {
@@ -19,27 +39,74 @@ function impactBadge(impact: string) {
 }
 
 export default function CrisisSimulation() {
-  const banks = useMemo(() => getBanks(), [])
-  const [selectedBank, setSelectedBank] = useState(banks[0].id)
+  const allBanks = useMemo(() => getBanks(), [])
+  const [peerGroups, setPeerGroups] = useState<PeerGroup[]>([])
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('')
+
+  useEffect(() => {
+    setPeerGroups(loadPeerGroups())
+  }, [])
+
+  // Filter banks by peer group
+  const banks = useMemo(() => {
+    if (!selectedGroupId) return allBanks
+
+    const group = peerGroups.find(g => g.id === selectedGroupId)
+    if (!group) return allBanks
+
+    return allBanks.filter(b => group.bankIds.includes(b.id))
+  }, [allBanks, selectedGroupId, peerGroups])
+
+  const [selectedBank, setSelectedBank] = useState(banks[0]?.id || allBanks[0]?.id)
   const data = useMemo(() => getCrisisSimulation(selectedBank), [selectedBank])
+  const selectedGroup = peerGroups.find(g => g.id === selectedGroupId)
+
+  const insight = {
+    type: 'finding' as const,
+    title: `${data.scenarios.length} crisis scenarios for ${data.bank.ticker}`,
+    message: `Monte Carlo simulation across ${data.scenarios.length} crisis types${selectedGroup ? ` within ${selectedGroup.name}` : ''}.`,
+    detail: `Highest risk: ${data.scenarios.reduce((max, s) => s.projected_score > max.projected_score ? s : max).name} (${Math.round(data.scenarios.reduce((max, s) => s.projected_score > max.projected_score ? s : max).probability * 100)}% probability)`
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Crisis Simulation</h2>
-          <p className="text-sm text-gray-500 mt-1">Scenario analysis and stress testing for reputation risk events</p>
+    <div className="space-y-4">
+      <PageObjective
+        title="Crisis Simulation"
+        objective="Stress test against plausible crisis scenarios"
+        description={`Monte Carlo simulation and scenario analysis${selectedGroup ? ` for ${selectedGroup.name}` : ' across all institutions'} — data breach, fraud, product recall, regulatory action, ESG controversy.`}
+      >
+        <div className="flex items-center gap-2">
+          <select
+            className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
+            value={selectedGroupId}
+            onChange={(e) => {
+              setSelectedGroupId(e.target.value)
+              const newBanks = e.target.value
+                ? allBanks.filter(b => peerGroups.find(g => g.id === e.target.value)?.bankIds.includes(b.id))
+                : allBanks
+              if (newBanks.length > 0) setSelectedBank(newBanks[0].id)
+            }}
+          >
+            <option value="">All Institutions ({allBanks.length})</option>
+            {peerGroups.map(group => (
+              <option key={group.id} value={group.id}>
+                {group.name} ({allBanks.filter(b => group.bankIds.includes(b.id)).length} banks)
+              </option>
+            ))}
+          </select>
+          <select
+            className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
+            value={selectedBank}
+            onChange={(e) => setSelectedBank(Number(e.target.value))}
+          >
+            {banks.map((b) => (
+              <option key={b.id} value={b.id}>{b.name} ({b.ticker})</option>
+            ))}
+          </select>
         </div>
-        <select
-          className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
-          value={selectedBank}
-          onChange={(e) => setSelectedBank(Number(e.target.value))}
-        >
-          {banks.map((b) => (
-            <option key={b.id} value={b.id}>{b.name} ({b.ticker})</option>
-          ))}
-        </select>
-      </div>
+      </PageObjective>
+
+      <InsightBox {...insight} />
 
       {/* Monte Carlo projection */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
