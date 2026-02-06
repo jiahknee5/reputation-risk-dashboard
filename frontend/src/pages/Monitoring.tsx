@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { getBanks, getSignals, getSignalVolume } from '../services/api'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 
 function sentimentBadge(label: string | null, score: number | null) {
@@ -56,14 +56,21 @@ export default function Monitoring() {
 
   // Aggregate volume by date AND source for stacked chart
   const volumeByDate = useMemo(() => {
-    const byDate = volume.reduce<Record<string, { date: string; news: number; social: number; cfpb: number; regulatory: number; market: number }>>((acc, v) => {
-      if (!acc[v.date]) acc[v.date] = { date: v.date, news: 0, social: 0, cfpb: 0, regulatory: 0, market: 0 }
-      const sourceKey = v.source as keyof Omit<typeof acc[string], 'date'>
-      if (sourceKey in acc[v.date]) {
-        acc[v.date][sourceKey] += v.count
+    const byDate: Record<string, { date: string; news: number; social: number; cfpb: number; regulatory: number; market: number }> = {}
+
+    volume.forEach(v => {
+      if (!byDate[v.date]) {
+        byDate[v.date] = { date: v.date, news: 0, social: 0, cfpb: 0, regulatory: 0, market: 0 }
       }
-      return acc
-    }, {})
+
+      // Map source to the correct property
+      if (v.source === 'news') byDate[v.date].news += v.count
+      else if (v.source === 'social') byDate[v.date].social += v.count
+      else if (v.source === 'cfpb') byDate[v.date].cfpb += v.count
+      else if (v.source === 'regulatory') byDate[v.date].regulatory += v.count
+      else if (v.source === 'market') byDate[v.date].market += v.count
+    })
+
     return Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date))
   }, [volume])
 
