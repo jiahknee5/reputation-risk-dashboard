@@ -3,6 +3,7 @@ import { getBanks, getSignals, getSignalVolume } from '../services/api'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
+import PageObjective from '../components/PageObjective'
 
 function sentimentBadge(label: string | null, score: number | null) {
   if (!label) return null
@@ -62,8 +63,6 @@ export default function Monitoring() {
       if (!byDate[v.date]) {
         byDate[v.date] = { date: v.date, news: 0, social: 0, cfpb: 0, regulatory: 0, market: 0 }
       }
-
-      // Map source to the correct property
       if (v.source === 'news') byDate[v.date].news += v.count
       else if (v.source === 'social') byDate[v.date].social += v.count
       else if (v.source === 'cfpb') byDate[v.date].cfpb += v.count
@@ -76,6 +75,11 @@ export default function Monitoring() {
 
   return (
     <div className="space-y-6">
+      <PageObjective
+        objective="Detect emerging signals before they impact scores"
+        description="Real-time monitoring aggregates news, social media, regulatory filings, and market signals to identify reputation risks as they develop."
+      />
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-white">Real-Time Monitoring</h2>
@@ -136,11 +140,11 @@ export default function Monitoring() {
               labelStyle={{ color: '#9ca3af' }}
               cursor={{ fill: '#374151', opacity: 0.3 }}
             />
-            <Bar dataKey="news" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} />
-            <Bar dataKey="social" stackId="a" fill="#a855f7" radius={[0, 0, 0, 0]} />
-            <Bar dataKey="cfpb" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} />
-            <Bar dataKey="regulatory" stackId="a" fill="#ef4444" radius={[0, 0, 0, 0]} />
-            <Bar dataKey="market" stackId="a" fill="#06b6d4" radius={[2, 2, 0, 0]} />
+            <Bar dataKey="news" stackId="a" fill="#3b82f6" />
+            <Bar dataKey="social" stackId="a" fill="#a855f7" />
+            <Bar dataKey="cfpb" stackId="a" fill="#f97316" />
+            <Bar dataKey="regulatory" stackId="a" fill="#ef4444" />
+            <Bar dataKey="market" stackId="a" fill="#06b6d4" />
           </BarChart>
         </ResponsiveContainer>
         <div className="flex items-center gap-4 mt-4 text-xs">
