@@ -11,7 +11,9 @@ import { fetchGDELTNews, enrichWithSentiment } from '../api/gdelt-news'
 // Re-export types
 export type { BankInfo } from '../data/demo'
 
-const CFPB_API = 'https://www.consumerfinance.gov/data-research/consumer-complaints/search/api/v1/'
+// Backend proxy endpoints (avoid CORS)
+const CFPB_PROXY = '/api/reprisk/cfpb'
+const GDELT_PROXY = '/api/reprisk/gdelt'
 const NEWSAPI_KEY = import.meta.env.VITE_NEWSAPI_KEY || ''
 const NEWSAPI_URL = 'https://newsapi.org/v2/everything'
 const USE_REAL_DATA = import.meta.env.VITE_USE_REAL_DATA === 'true' // Opt-in for real API calls
@@ -99,18 +101,14 @@ interface CfpbComplaint {
 
 async function fetchCfpbComplaints(companyName: string, daysBack = 90, size = 100): Promise<CfpbComplaint[]> {
   const dateFrom = dateStr(daysBack)
-  const dateTo = dateStr(0)
   const params = new URLSearchParams({
     company: companyName,
-    date_received_min: dateFrom,
-    date_received_max: dateTo,
+    date_from: dateFrom,
     size: String(size),
-    sort: 'created_date_desc',
-    no_aggs: 'true',
   })
 
-  const resp = await fetch(`${CFPB_API}?${params}`)
-  if (!resp.ok) throw new Error(`CFPB API ${resp.status}`)
+  const resp = await fetch(`${CFPB_PROXY}?${params}`)
+  if (!resp.ok) throw new Error(`CFPB Proxy ${resp.status}`)
   const data = await resp.json()
   const hits = data?.hits?.hits || []
   return hits.map((h: { _source: CfpbComplaint }) => h._source)

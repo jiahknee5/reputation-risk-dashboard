@@ -35,19 +35,19 @@ export interface NewsArticle {
  * @param maxRecords - Maximum number of articles to return (default 25)
  */
 export async function fetchGDELTNews(bankName: string, maxRecords = 25): Promise<GDELTArticle[]> {
-  const query = encodeURIComponent(bankName)
-  const mode = 'artlist' // Article list mode
-  const format = 'json'
-  const timespan = '7d' // Last 7 days
-  const sort = 'datedesc' // Most recent first
+  const params = new URLSearchParams({
+    query: bankName,
+    maxrecords: String(maxRecords),
+    timespan: '7d',
+  })
 
-  const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${query}&mode=${mode}&format=${format}&maxrecords=${maxRecords}&timespan=${timespan}&sort=${sort}`
+  const url = `/api/reprisk/gdelt?${params}`
 
   try {
     const response = await fetch(url)
 
     if (!response.ok) {
-      throw new Error(`GDELT API returned ${response.status}`)
+      throw new Error(`GDELT Proxy returned ${response.status}`)
     }
 
     const data: GDELTResponse = await response.json()
