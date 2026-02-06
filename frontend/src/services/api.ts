@@ -401,6 +401,7 @@ export async function getSignals(bankId?: number, limit = 100) {
     // Real CFPB complaints as signals
     try {
       const complaints = await fetchAllBankComplaints(bank.name, 90)
+      console.log(`Fetched ${complaints.length} CFPB complaints for ${bank.name}`)
       for (const c of complaints) {
         const sentiment = c.consumer_disputed === 'Yes' ? -0.6 : c.timely === 'Yes' ? 0.1 : -0.3
         liveSignals.push({
@@ -471,6 +472,13 @@ export async function getSignals(bankId?: number, limit = 100) {
 
   // Sort by date descending (most recent first)
   liveSignals.sort((a, b) => (b.published_at || '').localeCompare(a.published_at || ''))
+
+  // Fallback to demo data if no signals fetched
+  if (liveSignals.length === 0) {
+    console.warn('No live signals fetched, falling back to demo data')
+    return demo.getSignals(bankId, limit)
+  }
+
   return liveSignals.slice(0, limit)
 }
 

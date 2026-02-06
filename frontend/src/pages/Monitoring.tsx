@@ -16,12 +16,45 @@ interface PeerGroup {
   updatedAt: number
 }
 
+// Default peer categories based on Federal Reserve bank classifications
+const DEFAULT_PEER_GROUPS: PeerGroup[] = [
+  {
+    id: 'cat1-gsibs',
+    name: 'Category I – G-SIBs',
+    description: 'Global Systemically Important Banks',
+    bankIds: [2, 4, 7, 3, 8, 9, 10, 11], // JPM, BAC, C, WFC, GS, MS, BK, STT
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  },
+  {
+    id: 'cat2-large',
+    name: 'Category II – Large Regional',
+    description: 'Large Banking Organizations',
+    bankIds: [1, 5, 6, 12, 13, 14, 15, 16], // USB, PNC, TFC, COF, TD, FITB, BMO, CFG
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  },
+  {
+    id: 'cat3-regional',
+    name: 'Category III – Regional',
+    description: 'Regional Banking Organizations',
+    bankIds: [17, 18, 19, 20, 21, 22, 23], // MTB, KEY, HBAN, RF, ALLY, AXP, DFS
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  },
+]
+
 function loadPeerGroups(): PeerGroup[] {
   try {
     const stored = localStorage.getItem('reprisk-peer-groups')
-    return stored ? JSON.parse(stored) : []
+    if (stored) {
+      return JSON.parse(stored)
+    }
+    // Initialize with defaults if empty
+    localStorage.setItem('reprisk-peer-groups', JSON.stringify(DEFAULT_PEER_GROUPS))
+    return DEFAULT_PEER_GROUPS
   } catch {
-    return []
+    return DEFAULT_PEER_GROUPS
   }
 }
 
