@@ -13,12 +13,15 @@ import BoardReports from './pages/BoardReports'
 import Feedback from './pages/Feedback'
 import ClawdChat from './pages/ClawdChat'
 import DataSources from './pages/DataSources'
+import { useTheme } from './hooks/useTheme'
 
 export default function App() {
+  const { theme, toggleTheme } = useTheme()
+
   return (
-    <div className="flex min-h-screen bg-white">
-      <Sidebar />
-      <main className="flex-1 p-6 overflow-auto bg-gray-50">
+    <div className="flex min-h-screen bg-white dark:bg-gray-950">
+      <Sidebar theme={theme} toggleTheme={toggleTheme} />
+      <main className="flex-1 p-6 overflow-auto bg-gray-50 dark:bg-gray-900">
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/monitoring" element={<Monitoring />} />

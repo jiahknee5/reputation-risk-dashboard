@@ -13,25 +13,25 @@ export default function Watchlist({ onBankClick }: WatchlistProps) {
 
   if (watched.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4">
-        <h3 className="text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+        <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
           <Star size={14} /> Watchlist
         </h3>
-        <p className="text-xs text-gray-600">Click the star on any bank card to add it to your watchlist.</p>
+        <p className="text-xs text-gray-600 dark:text-gray-400">Click the star on any bank card to add it to your watchlist.</p>
       </div>
     )
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4">
-      <h3 className="text-sm font-medium text-gray-600 mb-3 flex items-center gap-2">
+    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+      <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3 flex items-center gap-2">
         <Star size={14} className="text-yellow-500" /> Watchlist
       </h3>
       <div className="space-y-2">
         {watched.map(bank => (
           <div
             key={bank.id}
-            className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50/50 hover:bg-gray-50 transition-colors cursor-pointer"
+            className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50/50 hover:bg-gray-50 dark:bg-gray-800 transition-colors cursor-pointer"
             onClick={() => onBankClick?.(bank.id)}
           >
             <span className="text-sm text-gray-200">{bank.name} ({bank.ticker})</span>

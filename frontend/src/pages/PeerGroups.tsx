@@ -191,7 +191,7 @@ export default function PeerGroups() {
       >
         <button
           onClick={startCreate}
-          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-900 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-900 dark:text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
         >
           <Plus size={16} />
           New Group
@@ -202,27 +202,27 @@ export default function PeerGroups() {
 
       {/* Quick Presets */}
       {groups.length === 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-gray-900 mb-3">Quick Presets — Fed Categories</h3>
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Quick Presets — Fed Categories</h3>
           <div className="space-y-3">
             <div>
               <p className="text-xs text-gray-500 mb-2">Category I — GSIBs (8 banks)</p>
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => createPreset('Category I — All GSIBs', ['JPM', 'BAC', 'C', 'WFC', 'GS', 'MS', 'BK', 'STT'])}
-                  className="px-3 py-2 text-xs text-gray-700 bg-blue-600/20 border border-blue-500/50 rounded-lg hover:bg-blue-600/30 transition-colors"
+                  className="px-3 py-2 text-xs text-gray-700 dark:text-gray-300 bg-blue-600/20 border border-blue-500/50 rounded-lg hover:bg-blue-600/30 transition-colors"
                 >
                   All Category I (8)
                 </button>
                 <button
                   onClick={() => createPreset('Top 4 GSIBs', ['JPM', 'BAC', 'C', 'WFC'])}
-                  className="px-3 py-2 text-xs text-gray-700 bg-gray-50 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="px-3 py-2 text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:bg-gray-700 transition-colors"
                 >
                   Top 4 GSIBs
                 </button>
                 <button
                   onClick={() => createPreset('Custody Banks', ['BK', 'STT'])}
-                  className="px-3 py-2 text-xs text-gray-700 bg-gray-50 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="px-3 py-2 text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:bg-gray-700 transition-colors"
                 >
                   Custody Banks
                 </button>
@@ -234,13 +234,13 @@ export default function PeerGroups() {
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => createPreset('Category II — All Super-Regionals', ['USB', 'PNC', 'TFC', 'COF', 'TD', 'FITB', 'BMO', 'CFG'])}
-                  className="px-3 py-2 text-xs text-gray-700 bg-purple-600/20 border border-purple-500/50 rounded-lg hover:bg-purple-600/30 transition-colors"
+                  className="px-3 py-2 text-xs text-gray-700 dark:text-gray-300 bg-purple-600/20 border border-purple-500/50 rounded-lg hover:bg-purple-600/30 transition-colors"
                 >
                   All Category II (8)
                 </button>
                 <button
                   onClick={() => createPreset('US Regional Top 4', ['USB', 'PNC', 'TFC', 'COF'])}
-                  className="px-3 py-2 text-xs text-gray-700 bg-gray-50 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="px-3 py-2 text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:bg-gray-700 transition-colors"
                 >
                   US Regional Top 4
                 </button>
@@ -252,13 +252,13 @@ export default function PeerGroups() {
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => createPreset('Category III — All Regional', ['MTB', 'KEY', 'HBAN', 'RF', 'ALLY', 'AXP', 'DFS'])}
-                  className="px-3 py-2 text-xs text-gray-700 bg-green-600/20 border border-green-500/50 rounded-lg hover:bg-green-600/30 transition-colors"
+                  className="px-3 py-2 text-xs text-gray-700 dark:text-gray-300 bg-green-600/20 border border-green-500/50 rounded-lg hover:bg-green-600/30 transition-colors"
                 >
                   All Category III (7)
                 </button>
                 <button
                   onClick={() => createPreset('Credit Card Specialists', ['AXP', 'DFS', 'COF'])}
-                  className="px-3 py-2 text-xs text-gray-700 bg-gray-50 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="px-3 py-2 text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:bg-gray-700 transition-colors"
                 >
                   Credit Card Specialists
                 </button>
@@ -270,14 +270,14 @@ export default function PeerGroups() {
 
       {/* Create/Edit Form */}
       {(creating || editing) && (
-        <div className="bg-white border-2 border-blue-500/50 rounded-xl p-4">
+        <div className="bg-white dark:bg-gray-900 border-2 border-blue-500/50 rounded-xl p-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-900">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white">
               {creating ? 'Create New Peer Group' : 'Edit Peer Group'}
             </h3>
             <button
               onClick={cancelEdit}
-              className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
+              className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-300 transition-colors"
             >
               <X size={18} />
             </button>
@@ -285,32 +285,32 @@ export default function PeerGroups() {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Group Name *</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Group Name *</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g. Regional Super-Regionals"
-                className="w-full bg-gray-50 border border-gray-300 text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Description</label>
               <textarea
                 value={formData.description}
                 onChange={e => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Optional description..."
                 rows={2}
-                className="w-full bg-gray-50 border border-gray-300 text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-2">
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
                 Select Banks * ({formData.bankIds.length} selected)
               </label>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-64 overflow-y-auto p-2 bg-gray-50/50 rounded-lg">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-64 overflow-y-auto p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                 {allBanks.map(bank => (
                   <label
                     key={bank.id}
@@ -324,7 +324,7 @@ export default function PeerGroups() {
                       type="checkbox"
                       checked={formData.bankIds.includes(bank.id)}
                       onChange={() => toggleBank(bank.id)}
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-600 rounded focus:ring-blue-500"
+                      className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
                     />
                     <span className="text-xs text-gray-200">{bank.ticker}</span>
                   </label>
@@ -332,17 +332,17 @@ export default function PeerGroups() {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-800">
               <button
                 onClick={cancelEdit}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-200 transition-colors"
+                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-200 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={saveGroup}
                 disabled={!formData.name.trim() || formData.bankIds.length === 0}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-900 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-900 dark:text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save size={16} />
                 Save Group
@@ -355,8 +355,8 @@ export default function PeerGroups() {
       {/* Peer Groups List */}
       <div className="space-y-3">
         {groups.length === 0 && !creating && (
-          <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
-            <Users size={48} className="text-gray-700 mx-auto mb-4" />
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-8 text-center">
+            <Users size={48} className="text-gray-700 dark:text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500 text-sm">No peer groups yet. Click "New Group" to create one.</p>
           </div>
         )}
@@ -366,30 +366,30 @@ export default function PeerGroups() {
           return (
             <div
               key={group.id}
-              className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 transition-colors"
+              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 hover:border-gray-300 dark:border-gray-700 transition-colors"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-base font-semibold text-gray-900">{group.name}</h3>
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">{group.name}</h3>
                     <span className="px-2 py-0.5 rounded-full text-xs bg-blue-600/20 text-blue-400">
                       {banks.length} bank{banks.length !== 1 ? 's' : ''}
                     </span>
                   </div>
                   {group.description && (
-                    <p className="text-sm text-gray-600 mb-3">{group.description}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{group.description}</p>
                   )}
                   <div className="flex flex-wrap gap-1.5">
                     {banks.map(bank => (
                       <span
                         key={bank.id}
-                        className="px-2 py-1 rounded text-xs bg-gray-50 border border-gray-300 text-gray-700"
+                        className="px-2 py-1 rounded text-xs bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300"
                       >
                         {bank.ticker}
                       </span>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-600 mt-3">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-3">
                     Last updated: {new Date(group.updatedAt).toLocaleString()}
                   </p>
                 </div>

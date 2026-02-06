@@ -45,7 +45,7 @@ export default function ExportButton({ data, filename, format, label }: ExportBu
   return (
     <button
       onClick={handleExport}
-      className="flex items-center gap-2 px-3 py-1.5 text-xs bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 hover:text-gray-200 transition-colors"
+      className="flex items-center gap-2 px-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-100 dark:bg-gray-700 hover:text-gray-200 transition-colors"
     >
       <Download size={14} />
       {label || `Export ${format.toUpperCase()}`}

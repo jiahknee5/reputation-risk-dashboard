@@ -152,7 +152,7 @@ export default function PeerBenchmarking() {
         description="Cross-institution risk comparison with component-level breakdowns and deviation analysis. Filter by custom peer groups or view all institutions."
       >
         <select
-          className="bg-gray-50 border border-gray-300 text-gray-700 rounded-lg px-3 py-2 text-sm"
+          className="bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg px-3 py-2 text-sm"
           value={selectedGroupId}
           onChange={(e) => {
             setSelectedGroupId(e.target.value)
@@ -171,11 +171,11 @@ export default function PeerBenchmarking() {
       {insight && <InsightBox {...insight} />}
 
       {/* Peer average banner */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-medium text-gray-900">Peer Group Average</h3>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{data.peer_average}</p>
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white">Peer Group Average</h3>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{data.peer_average}</p>
             <p className="text-[10px] text-gray-500 mt-0.5">Across {data.banks.length} institutions</p>
           </div>
           <div className="flex gap-4">
@@ -202,9 +202,9 @@ export default function PeerBenchmarking() {
       />
 
       {/* Gauges by peer group */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
         <div className="mb-4">
-          <h3 className="text-sm font-medium text-gray-900">Composite Risk Ranking</h3>
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Composite Risk Ranking</h3>
           <p className="text-[10px] text-gray-500">Click any institution to highlight across all charts</p>
         </div>
         <div className="space-y-6">
@@ -237,9 +237,9 @@ export default function PeerBenchmarking() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Deviation chart */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
           <div className="mb-3">
-            <h3 className="text-sm font-medium text-gray-900">Deviation from Peer Average</h3>
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white">Deviation from Peer Average</h3>
             <p className="text-[10px] text-gray-500">Green = below peer avg (lower risk), Red = above peer avg (higher risk)</p>
           </div>
           <ResponsiveContainer width="100%" height={200}>
@@ -258,9 +258,9 @@ export default function PeerBenchmarking() {
         </div>
 
         {/* Radar chart */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
           <div className="mb-3">
-            <h3 className="text-sm font-medium text-gray-900">Component Risk Profile</h3>
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white">Component Risk Profile</h3>
             <p className="text-[10px] text-gray-500">Multi-dimensional view of top 3 institutions</p>
           </div>
           <ResponsiveContainer width="100%" height={200}>
@@ -281,14 +281,14 @@ export default function PeerBenchmarking() {
               <Legend wrapperStyle={{ fontSize: 11 }} />
             </RadarChart>
           </ResponsiveContainer>
-          <p className="text-xs text-gray-600 mt-2 text-center">Showing top 3 institutions by risk score</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 text-center">Showing top 3 institutions by risk score</p>
         </div>
       </div>
 
       {/* Detailed comparison table */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="p-3 border-b border-gray-200">
-          <h3 className="text-sm font-medium text-gray-900">Detailed Risk Comparison</h3>
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+        <div className="p-3 border-b border-gray-200 dark:border-gray-800">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Detailed Risk Comparison</h3>
           <p className="text-[10px] text-gray-500">
             {selectedGroup ? `${selectedGroup.name} — ${data.banks.length} institutions` : `All 23 institutions with component scores`} — Click row to highlight
           </p>
@@ -296,7 +296,7 @@ export default function PeerBenchmarking() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-gray-600 text-xs border-b border-gray-200">
+              <tr className="text-gray-600 dark:text-gray-400 text-xs border-b border-gray-200 dark:border-gray-800">
                 <th className="text-left p-2">Institution</th>
                 <th className="text-right p-2">Composite</th>
                 <th className="text-right p-2">Media</th>
@@ -317,10 +317,10 @@ export default function PeerBenchmarking() {
                 >
                   <td className="p-2 text-gray-200 font-medium text-xs">{b.bank.name} <span className="text-gray-500">({b.bank.ticker})</span></td>
                   <td className={`p-2 text-right font-bold text-xs ${b.composite_score >= 50 ? 'text-red-400' : b.composite_score >= 30 ? 'text-yellow-400' : 'text-green-400'}`}>{b.composite_score}</td>
-                  <td className="p-2 text-right text-gray-700 text-xs">{b.media_sentiment_score}</td>
-                  <td className="p-2 text-right text-gray-700 text-xs">{b.complaint_score}</td>
-                  <td className="p-2 text-right text-gray-700 text-xs">{b.market_score}</td>
-                  <td className="p-2 text-right text-gray-700 text-xs">{b.regulatory_score}</td>
+                  <td className="p-2 text-right text-gray-700 dark:text-gray-300 text-xs">{b.media_sentiment_score}</td>
+                  <td className="p-2 text-right text-gray-700 dark:text-gray-300 text-xs">{b.complaint_score}</td>
+                  <td className="p-2 text-right text-gray-700 dark:text-gray-300 text-xs">{b.market_score}</td>
+                  <td className="p-2 text-right text-gray-700 dark:text-gray-300 text-xs">{b.regulatory_score}</td>
                   <td className={`p-2 text-right font-medium text-xs ${b.deviation_from_peer > 0 ? 'text-red-400' : 'text-green-400'}`}>
                     {b.deviation_from_peer > 0 ? '+' : ''}{b.deviation_from_peer}
                   </td>

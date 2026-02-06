@@ -65,13 +65,13 @@ export default function StakeholderImpact() {
       />
 
       {data.map((bankData) => (
-        <div key={bankData.bank.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <div className="p-4 border-b border-gray-200">
-            <h3 className="text-sm font-semibold text-gray-900">
+        <div key={bankData.bank.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
               {bankData.bank.name} <span className="text-gray-500">({bankData.bank.ticker})</span>
             </h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-gray-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-gray-200 dark:divide-gray-800">
             {bankData.stakeholders.map((stakeholder) => (
               <div key={stakeholder.group} className="p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -80,7 +80,7 @@ export default function StakeholderImpact() {
                       stakeholder.impact_level === 'High' ? 'bg-red-500' :
                       stakeholder.impact_level === 'Moderate' ? 'bg-yellow-500' : 'bg-green-500'
                     }`} />
-                    <span className="text-sm font-medium text-gray-700">{stakeholder.group}</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{stakeholder.group}</span>
                   </div>
                   {impactBadge(stakeholder.impact_level)}
                 </div>
@@ -103,28 +103,28 @@ export default function StakeholderImpact() {
       ))}
 
       {/* Legend */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
         <h4 className="text-xs font-medium text-gray-500 mb-3">Impact Level Definitions</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
           <div className="flex gap-2">
             <span className="w-2 h-2 rounded-full bg-red-500 mt-1 shrink-0" />
             <div>
               <span className="text-red-400 font-medium">High Impact</span>
-              <p className="text-gray-600 mt-0.5">Material risk to stakeholder relationship. Requires active mitigation and executive attention.</p>
+              <p className="text-gray-600 dark:text-gray-400 mt-0.5">Material risk to stakeholder relationship. Requires active mitigation and executive attention.</p>
             </div>
           </div>
           <div className="flex gap-2">
             <span className="w-2 h-2 rounded-full bg-yellow-500 mt-1 shrink-0" />
             <div>
               <span className="text-yellow-400 font-medium">Moderate Impact</span>
-              <p className="text-gray-600 mt-0.5">Emerging risk that warrants monitoring. Potential for escalation if conditions deteriorate.</p>
+              <p className="text-gray-600 dark:text-gray-400 mt-0.5">Emerging risk that warrants monitoring. Potential for escalation if conditions deteriorate.</p>
             </div>
           </div>
           <div className="flex gap-2">
             <span className="w-2 h-2 rounded-full bg-green-500 mt-1 shrink-0" />
             <div>
               <span className="text-green-400 font-medium">Low Impact</span>
-              <p className="text-gray-600 mt-0.5">Within normal operating parameters. Standard monitoring protocols sufficient.</p>
+              <p className="text-gray-600 dark:text-gray-400 mt-0.5">Within normal operating parameters. Standard monitoring protocols sufficient.</p>
             </div>
           </div>
         </div>

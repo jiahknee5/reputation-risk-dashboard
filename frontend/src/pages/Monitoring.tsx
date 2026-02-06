@@ -176,7 +176,7 @@ export default function Monitoring() {
       >
         <div className="flex items-center gap-2">
           <select
-            className="bg-gray-50 border border-gray-300 text-gray-700 rounded-lg px-3 py-2 text-sm"
+            className="bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg px-3 py-2 text-sm"
             value={selectedGroupId}
             onChange={(e) => {
               setSelectedGroupId(e.target.value)
@@ -195,7 +195,7 @@ export default function Monitoring() {
             ))}
           </select>
           <select
-            className="bg-gray-50 border border-gray-300 text-gray-700 rounded-lg px-3 py-2 text-sm"
+            className="bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg px-3 py-2 text-sm"
             value={selectedBank}
             onChange={(e) => setSelectedBank(Number(e.target.value))}
           >
@@ -218,10 +218,10 @@ export default function Monitoring() {
       />
 
       {/* Volume chart */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h3 className="text-sm font-medium text-gray-900">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white">
               Signal Volume (30 Days)
               {selectedDate && (
                 <span className="ml-2 text-xs text-blue-400">
@@ -234,7 +234,7 @@ export default function Monitoring() {
           {selectedDate && (
             <button
               onClick={() => setSelectedDate(undefined)}
-              className="text-xs text-gray-500 hover:text-gray-700"
+              className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-300"
             >
               Clear date filter
             </button>
@@ -271,23 +271,23 @@ export default function Monitoring() {
         <div className="flex items-center gap-4 mt-4 text-xs">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded" style={{ backgroundColor: '#3b82f6' }} />
-            <span className="text-gray-600">News</span>
+            <span className="text-gray-600 dark:text-gray-400">News</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded" style={{ backgroundColor: '#a855f7' }} />
-            <span className="text-gray-600">Social</span>
+            <span className="text-gray-600 dark:text-gray-400">Social</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded" style={{ backgroundColor: '#f97316' }} />
-            <span className="text-gray-600">CFPB</span>
+            <span className="text-gray-600 dark:text-gray-400">CFPB</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded" style={{ backgroundColor: '#ef4444' }} />
-            <span className="text-gray-600">Regulatory</span>
+            <span className="text-gray-600 dark:text-gray-400">Regulatory</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded" style={{ backgroundColor: '#06b6d4' }} />
-            <span className="text-gray-600">Market</span>
+            <span className="text-gray-600 dark:text-gray-400">Market</span>
           </div>
         </div>
       </div>
@@ -299,10 +299,10 @@ export default function Monitoring() {
       />
 
       {/* Signal feed */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="p-3 border-b border-gray-200 flex items-center justify-between">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+        <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-medium text-gray-900">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white">
               Signal Feed
               <span className="ml-2 text-xs text-gray-500">({signals.length} signals)</span>
             </h3>
@@ -310,7 +310,7 @@ export default function Monitoring() {
           </div>
           <div className="flex items-center gap-2">
             <select
-              className="bg-gray-50 border border-gray-300 text-gray-700 rounded-lg px-2 py-1 text-xs"
+              className="bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg px-2 py-1 text-xs"
               value={selectedSource ?? ''}
               onChange={(e) => setSelectedSource(e.target.value || undefined)}
             >
@@ -327,14 +327,14 @@ export default function Monitoring() {
                   setSelectedDate(undefined)
                   setSelectedSource(undefined)
                 }}
-                className="text-xs text-gray-500 hover:text-gray-700"
+                className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-300"
               >
                 Clear filters
               </button>
             )}
           </div>
         </div>
-        <div className="divide-y divide-gray-200 max-h-[500px] overflow-y-auto">
+        <div className="divide-y divide-gray-200 dark:divide-gray-800 max-h-[500px] overflow-y-auto">
           {loading ? (
             <div className="p-8 text-center text-gray-500">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-3"></div>

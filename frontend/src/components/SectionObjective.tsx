@@ -23,7 +23,7 @@ export default function SectionObjective({ title, objective, type = 'info' }: Se
         <span className="text-sm">{icons[type]}</span>
         <div>
           <h4 className="text-xs font-semibold text-gray-200">{title}</h4>
-          <p className="text-[10px] text-gray-600 mt-0.5">{objective}</p>
+          <p className="text-[10px] text-gray-600 dark:text-gray-400 mt-0.5">{objective}</p>
         </div>
       </div>
     </div>
