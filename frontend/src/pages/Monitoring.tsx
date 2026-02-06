@@ -76,15 +76,10 @@ export default function Monitoring() {
   return (
     <div className="space-y-6">
       <PageObjective
+        title="Real-Time Monitoring"
         objective="Detect emerging signals before they impact scores"
         description="Real-time monitoring aggregates news, social media, regulatory filings, and market signals to identify reputation risks as they develop."
-      />
-
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Real-Time Monitoring</h2>
-          <p className="text-sm text-gray-500 mt-1">Live signal feed and volume tracking</p>
-        </div>
+      >
         <select
           className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
           value={selectedBank ?? ''}
@@ -97,7 +92,7 @@ export default function Monitoring() {
             </option>
           ))}
         </select>
-      </div>
+      </PageObjective>
 
       {/* Volume chart */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
