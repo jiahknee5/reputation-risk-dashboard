@@ -19,7 +19,7 @@ function statusColor(s: string) {
   const m: Record<string, string> = {
     open: 'bg-blue-500/20 text-blue-400',
     in_progress: 'bg-purple-500/20 text-purple-400',
-    closed: 'bg-gray-500/20 text-gray-400',
+    closed: 'bg-gray-500/20 text-gray-600',
   }
   return m[s] || m.open
 }
@@ -68,20 +68,20 @@ export default function Feedback() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Developer Feedback</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Developer Feedback</h2>
           <p className="text-sm text-gray-500 mt-1">Submit feature requests, report bugs, and vote on priorities</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
           >
             <Download size={16} />
             Export JSON
           </button>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-gray-900 rounded-lg hover:bg-blue-500 transition-colors"
           >
             <Plus size={16} />
             New Request
@@ -91,13 +91,13 @@ export default function Feedback() {
 
       {/* Submission form */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setFormType('feature')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                formType === 'feature' ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 'text-gray-400 hover:text-gray-200'
+                formType === 'feature' ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 'text-gray-600 hover:text-gray-200'
               }`}
             >
               <Lightbulb size={14} />
@@ -107,7 +107,7 @@ export default function Feedback() {
               type="button"
               onClick={() => setFormType('bug')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                formType === 'bug' ? 'bg-red-600/20 text-red-400 border border-red-500/30' : 'text-gray-400 hover:text-gray-200'
+                formType === 'bug' ? 'bg-red-600/20 text-red-400 border border-red-500/30' : 'text-gray-600 hover:text-gray-200'
               }`}
             >
               <Bug size={14} />
@@ -120,7 +120,7 @@ export default function Feedback() {
             <input
               value={title}
               onChange={e => setTitle(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+              className="w-full bg-gray-50 border border-gray-300 text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
               placeholder={formType === 'feature' ? 'Add social media sentiment tracking...' : 'Risk score not updating when...'}
               required
             />
@@ -134,7 +134,7 @@ export default function Feedback() {
               value={description}
               onChange={e => setDescription(e.target.value)}
               rows={4}
-              className="w-full bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 resize-none"
+              className="w-full bg-gray-50 border border-gray-300 text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 resize-none"
               placeholder={formType === 'feature' ? 'Describe the feature and its expected value...' : '1. Go to...\n2. Click...\n3. Expected: ...\n4. Actual: ...'}
             />
           </div>
@@ -145,7 +145,7 @@ export default function Feedback() {
               <select
                 value={category}
                 onChange={e => setCategory(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
+                className="w-full bg-gray-50 border border-gray-300 text-gray-700 rounded-lg px-3 py-2 text-sm"
               >
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -155,7 +155,7 @@ export default function Feedback() {
               <select
                 value={priority}
                 onChange={e => setPriority(e.target.value as FeedbackItem['priority'])}
-                className="w-full bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
+                className="w-full bg-gray-50 border border-gray-300 text-gray-700 rounded-lg px-3 py-2 text-sm"
               >
                 {PRIORITIES.map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
               </select>
@@ -166,13 +166,13 @@ export default function Feedback() {
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="px-4 py-2 text-sm text-gray-400 hover:text-gray-200 transition-colors"
+              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-200 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
+              className="px-4 py-2 text-sm bg-blue-600 text-gray-900 rounded-lg hover:bg-blue-500 transition-colors"
             >
               Submit
             </button>
@@ -187,7 +187,7 @@ export default function Feedback() {
           <select
             value={filterCategory}
             onChange={e => setFilterCategory(e.target.value)}
-            className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-1.5 text-sm"
+            className="bg-gray-50 border border-gray-300 text-gray-700 rounded-lg px-3 py-1.5 text-sm"
           >
             <option value="all">All Categories</option>
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -196,7 +196,7 @@ export default function Feedback() {
         <select
           value={sortBy}
           onChange={e => setSortBy(e.target.value as 'votes' | 'date')}
-          className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-1.5 text-sm"
+          className="bg-gray-50 border border-gray-300 text-gray-700 rounded-lg px-3 py-1.5 text-sm"
         >
           <option value="date">Newest First</option>
           <option value="votes">Most Voted</option>
@@ -206,14 +206,14 @@ export default function Feedback() {
 
       {/* Feedback list */}
       {filtered.length === 0 ? (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
+        <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
           <Lightbulb size={32} className="mx-auto text-gray-600 mb-3" />
-          <p className="text-gray-400">No feedback yet. Be the first to submit!</p>
+          <p className="text-gray-600">No feedback yet. Be the first to submit!</p>
         </div>
       ) : (
         <div className="space-y-3">
           {filtered.map(item => (
-            <div key={item.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors">
+            <div key={item.id} className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 transition-colors">
               <div className="flex items-start gap-4">
                 {/* Vote button */}
                 <button
@@ -237,7 +237,7 @@ export default function Feedback() {
                     <span className={`px-2 py-0.5 rounded text-xs ${statusColor(item.status)}`}>
                       {item.status.replace('_', ' ')}
                     </span>
-                    <span className="px-2 py-0.5 rounded text-xs bg-gray-700/50 text-gray-400">
+                    <span className="px-2 py-0.5 rounded text-xs bg-gray-100/50 text-gray-600">
                       {item.category}
                     </span>
                   </div>

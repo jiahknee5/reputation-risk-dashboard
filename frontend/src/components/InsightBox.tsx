@@ -61,8 +61,8 @@ export default function InsightBox({ type, title, message, detail, linkText, lin
         </div>
         <div className="flex-1 min-w-0">
           <p className={`text-xs font-semibold ${titleColor} uppercase tracking-wide mb-1`}>{label}</p>
-          <p className="text-base text-white font-medium">{title}</p>
-          <p className="text-sm text-gray-300 mt-1">{message}</p>
+          <p className="text-base text-gray-900 font-medium">{title}</p>
+          <p className="text-sm text-gray-700 mt-1">{message}</p>
           {detail && (
             <p className="text-xs text-gray-500 mt-2">{detail}</p>
           )}

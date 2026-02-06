@@ -165,7 +165,7 @@ export default function DataSources() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <Database size={20} className="text-blue-400" />
             Data Sources
           </h2>
@@ -175,7 +175,7 @@ export default function DataSources() {
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm bg-gray-800 border border-gray-700 rounded-lg text-gray-300"
+            className="px-3 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded-lg text-gray-700"
           >
             <option value="all">All Sources</option>
             <option value="regulatory">Regulatory</option>
@@ -187,7 +187,7 @@ export default function DataSources() {
           <button
             onClick={syncAll}
             disabled={syncing !== null}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-gray-900 rounded-lg hover:bg-blue-500 disabled:opacity-50"
           >
             <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
             Sync All
@@ -196,19 +196,19 @@ export default function DataSources() {
       </div>
 
       {/* Table */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-800 bg-gray-900/50">
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium w-8">On</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Source</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium hidden md:table-cell">Description</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium w-20">Category</th>
-              <th className="text-right py-2.5 px-3 text-gray-400 font-medium w-24">Price</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium w-20">Frequency</th>
-              <th className="text-right py-2.5 px-3 text-gray-400 font-medium w-20">Records</th>
-              <th className="text-left py-2.5 px-3 text-gray-400 font-medium w-20">Last Sync</th>
-              <th className="text-center py-2.5 px-3 text-gray-400 font-medium w-16">Actions</th>
+            <tr className="border-b border-gray-200 bg-white/50">
+              <th className="text-left py-2.5 px-3 text-gray-600 font-medium w-8">On</th>
+              <th className="text-left py-2.5 px-3 text-gray-600 font-medium">Source</th>
+              <th className="text-left py-2.5 px-3 text-gray-600 font-medium hidden md:table-cell">Description</th>
+              <th className="text-left py-2.5 px-3 text-gray-600 font-medium w-20">Category</th>
+              <th className="text-right py-2.5 px-3 text-gray-600 font-medium w-24">Price</th>
+              <th className="text-left py-2.5 px-3 text-gray-600 font-medium w-20">Frequency</th>
+              <th className="text-right py-2.5 px-3 text-gray-600 font-medium w-20">Records</th>
+              <th className="text-left py-2.5 px-3 text-gray-600 font-medium w-20">Last Sync</th>
+              <th className="text-center py-2.5 px-3 text-gray-600 font-medium w-16">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -219,7 +219,7 @@ export default function DataSources() {
               return (
                 <tr 
                   key={source.id} 
-                  className={`border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors ${!source.enabled ? 'opacity-50' : ''}`}
+                  className={`border-b border-gray-200/50 hover:bg-gray-50/30 transition-colors ${!source.enabled ? 'opacity-50' : ''}`}
                 >
                   {/* Toggle */}
                   <td className="py-2 px-3">
@@ -227,7 +227,7 @@ export default function DataSources() {
                       onClick={() => toggleSource(source.id)}
                       disabled={isPremium}
                       className={`w-8 h-5 rounded-full transition-colors relative ${
-                        source.enabled ? 'bg-blue-600' : 'bg-gray-700'
+                        source.enabled ? 'bg-blue-600' : 'bg-gray-100'
                       } ${isPremium ? 'cursor-not-allowed opacity-50' : ''}`}
                     >
                       <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
@@ -240,7 +240,7 @@ export default function DataSources() {
                   <td className="py-2 px-3">
                     <div className="flex items-center gap-2">
                       <Icon size={16} className={source.enabled ? 'text-blue-400' : 'text-gray-500'} />
-                      <span className="text-white font-medium">{source.name}</span>
+                      <span className="text-gray-900 font-medium">{source.name}</span>
                       {isPremium && (
                         <Lock size={12} className="text-orange-400" />
                       )}
@@ -248,7 +248,7 @@ export default function DataSources() {
                   </td>
                   
                   {/* Description */}
-                  <td className="py-2 px-3 text-gray-400 hidden md:table-cell">
+                  <td className="py-2 px-3 text-gray-600 hidden md:table-cell">
                     <span className="line-clamp-1">{source.description}</span>
                   </td>
                   
@@ -267,12 +267,12 @@ export default function DataSources() {
                   </td>
 
                   {/* Frequency */}
-                  <td className="py-2 px-3 text-gray-400">
+                  <td className="py-2 px-3 text-gray-600">
                     {source.updateFrequency}
                   </td>
                   
                   {/* Records */}
-                  <td className="py-2 px-3 text-right text-gray-300 font-mono">
+                  <td className="py-2 px-3 text-right text-gray-700 font-mono">
                     {source.recordCount?.toLocaleString() || '—'}
                   </td>
                   
@@ -295,7 +295,7 @@ export default function DataSources() {
                           href={source.apiUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
+                          className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
                           title="View source"
                         >
                           <ExternalLink size={14} />

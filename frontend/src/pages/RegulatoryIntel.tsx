@@ -13,7 +13,7 @@ function severityDots(severity: number) {
           className={`w-2 h-2 rounded-full ${
             i <= severity
               ? severity >= 4 ? 'bg-red-500' : severity >= 3 ? 'bg-orange-500' : 'bg-yellow-500'
-              : 'bg-gray-700'
+              : 'bg-gray-100'
           }`}
         />
       ))}
@@ -30,7 +30,7 @@ function agencyBadge(agency: string) {
     CFPB: 'bg-orange-500/20 text-orange-400',
   }
   return (
-    <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[agency] || 'bg-gray-500/20 text-gray-400'}`}>
+    <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[agency] || 'bg-gray-500/20 text-gray-600'}`}>
       {agency}
     </span>
   )
@@ -73,24 +73,24 @@ export default function RegulatoryIntel() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
           <p className="text-xs text-gray-500">Total Enforcement Actions</p>
-          <p className="text-2xl font-bold text-white mt-1">{data.enforcementActions.length}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{data.enforcementActions.length}</p>
           <p className="text-xs text-gray-600 mt-1">Across all monitored institutions</p>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
           <p className="text-xs text-gray-500">High Severity (4-5)</p>
           <p className="text-2xl font-bold text-red-400 mt-1">{data.enforcementActions.filter((a) => a.severity >= 4).length}</p>
           <p className="text-xs text-gray-600 mt-1">Consent orders, CMPs, C&D</p>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
           <p className="text-xs text-gray-500">Total Penalties</p>
           <p className="text-2xl font-bold text-orange-400 mt-1">
             ${(data.enforcementActions.reduce((s, a) => s + (a.penalty_amount || 0), 0) / 1000000).toFixed(0)}M
           </p>
           <p className="text-xs text-gray-600 mt-1">Aggregate civil money penalties</p>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
           <p className="text-xs text-gray-500">SEC Filings Analyzed</p>
           <p className="text-2xl font-bold text-blue-400 mt-1">{data.secFilings.length}</p>
           <p className="text-xs text-gray-600 mt-1">10-K, 10-Q, 8-K filings</p>
@@ -104,18 +104,18 @@ export default function RegulatoryIntel() {
       />
 
       {/* Enforcement actions timeline */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-        <div className="p-3 border-b border-gray-800">
-          <h3 className="text-sm font-medium text-gray-400">Enforcement Action Timeline</h3>
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="p-3 border-b border-gray-200">
+          <h3 className="text-sm font-medium text-gray-600">Enforcement Action Timeline</h3>
         </div>
-        <div className="divide-y divide-gray-800 max-h-[500px] overflow-y-auto">
+        <div className="divide-y divide-gray-200 max-h-[500px] overflow-y-auto">
           {data.enforcementActions.map((action) => (
             <a
               key={action.id}
               href={action.url}
               target="_blank"
               rel="noopener noreferrer"
-              className={`block p-4 hover:bg-gray-800/30 transition-colors cursor-pointer ${action.severity >= 4 ? 'border-l-2 border-red-500' : ''}`}
+              className={`block p-4 hover:bg-gray-50/30 transition-colors cursor-pointer ${action.severity >= 4 ? 'border-l-2 border-red-500' : ''}`}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
@@ -149,14 +149,14 @@ export default function RegulatoryIntel() {
       />
 
       {/* SEC Filings */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-gray-800">
-          <h3 className="text-sm font-medium text-gray-400">SEC Filing Risk Analysis</h3>
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="p-4 border-b border-gray-200">
+          <h3 className="text-sm font-medium text-gray-600">SEC Filing Risk Analysis</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-gray-500 text-xs border-b border-gray-800">
+              <tr className="text-gray-500 text-xs border-b border-gray-200">
                 <th className="text-left p-3">Institution</th>
                 <th className="text-left p-3">Filing</th>
                 <th className="text-left p-3">Filed</th>
@@ -166,14 +166,14 @@ export default function RegulatoryIntel() {
             </thead>
             <tbody>
               {data.secFilings.map((filing, i) => (
-                <tr key={i} className="border-b border-gray-800/50 hover:bg-gray-800/30 group cursor-pointer">
+                <tr key={i} className="border-b border-gray-200/50 hover:bg-gray-50/30 group cursor-pointer">
                   <td className="p-3 text-gray-200">{filing.bank.name}</td>
                   <td className="p-3">
                     <a
                       href={filing.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-blue-400 px-2 py-0.5 rounded text-xs font-mono transition-colors"
+                      className="inline-flex items-center gap-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 hover:text-blue-400 px-2 py-0.5 rounded text-xs font-mono transition-colors"
                     >
                       {filing.filing_type}
                       <span className="text-blue-400 opacity-0 group-hover:opacity-100">→</span>
@@ -188,7 +188,7 @@ export default function RegulatoryIntel() {
                     </div>
                   </td>
                   <td className={`p-3 text-right text-xs font-medium ${
-                    filing.sentiment_score > 0.1 ? 'text-green-400' : filing.sentiment_score < -0.1 ? 'text-red-400' : 'text-gray-400'
+                    filing.sentiment_score > 0.1 ? 'text-green-400' : filing.sentiment_score < -0.1 ? 'text-red-400' : 'text-gray-600'
                   }`}>
                     {filing.sentiment_score.toFixed(2)}
                   </td>

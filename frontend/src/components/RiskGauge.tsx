@@ -37,11 +37,11 @@ export default function RiskGauge({ score, label, size = 'lg' }: RiskGaugeProps)
         <span className={`${scoreColor(score)} font-bold ${isLg ? 'text-3xl' : 'text-xl'}`}>
           {Math.round(score)}
         </span>
-        <span className={`text-gray-400 ${isLg ? 'text-xs' : 'text-[10px]'}`}>
+        <span className={`text-gray-600 ${isLg ? 'text-xs' : 'text-[10px]'}`}>
           {riskLabel(score)}
         </span>
       </div>
-      <span className={`text-gray-300 font-medium ${isLg ? 'text-sm' : 'text-xs'}`}>{label}</span>
+      <span className={`text-gray-700 font-medium ${isLg ? 'text-sm' : 'text-xs'}`}>{label}</span>
     </div>
   )
 }

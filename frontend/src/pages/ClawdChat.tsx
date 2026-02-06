@@ -185,13 +185,13 @@ function renderMarkdown(text: string) {
     // Source tags - style as small colored badges
     .replace(/\[(CFPB|SEC|FinBERT|OCC|FDIC|Fed|Dashboard|Monte Carlo|Peer Benchmark|No data)\]/g, 
       '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-500/20 text-blue-300 ml-1">$1</span>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-gray-900">$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/`(.*?)`/g, '<code class="bg-gray-800 px-1 rounded text-xs">$1</code>')
-    .replace(/^### (.*$)/gm, '<h3 class="text-sm font-semibold text-white mt-2 mb-1">$1</h3>')
-    .replace(/^## (.*$)/gm, '<h2 class="text-base font-semibold text-white mt-2 mb-1">$1</h2>')
-    .replace(/^- (.*$)/gm, '<li class="ml-3 text-gray-300 text-sm">• $1</li>')
-    .replace(/^\d+\. (.*$)/gm, '<li class="ml-3 text-gray-300 text-sm">$1</li>')
+    .replace(/`(.*?)`/g, '<code class="bg-gray-50 px-1 rounded text-xs">$1</code>')
+    .replace(/^### (.*$)/gm, '<h3 class="text-sm font-semibold text-gray-900 mt-2 mb-1">$1</h3>')
+    .replace(/^## (.*$)/gm, '<h2 class="text-base font-semibold text-gray-900 mt-2 mb-1">$1</h2>')
+    .replace(/^- (.*$)/gm, '<li class="ml-3 text-gray-700 text-sm">• $1</li>')
+    .replace(/^\d+\. (.*$)/gm, '<li class="ml-3 text-gray-700 text-sm">$1</li>')
     .replace(/\n\n/g, '<br/>')
     .replace(/\n/g, '<br/>')
 }
@@ -432,7 +432,7 @@ export default function ClawdChat() {
     <div className="flex flex-col h-[calc(100vh-3rem)]">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Bot size={24} className="text-blue-400" />
             Ask the Risk Analyst
           </h2>
@@ -448,12 +448,12 @@ export default function ClawdChat() {
           <div className="relative" ref={historyRef}>
             <button
               onClick={() => setShowHistory(!showHistory)}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-gray-200 bg-gray-800 border border-gray-700 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-200 bg-gray-50 border border-gray-300 rounded-lg transition-colors"
             >
               <History size={14} />
               History
               {sessions.length > 0 && (
-                <span className="bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded-full">
+                <span className="bg-blue-600 text-gray-900 text-xs px-1.5 py-0.5 rounded-full">
                   {sessions.length}
                 </span>
               )}
@@ -461,9 +461,9 @@ export default function ClawdChat() {
             </button>
             
             {showHistory && (
-              <div className="absolute right-0 top-full mt-2 w-80 bg-gray-900 border border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
-                <div className="p-3 border-b border-gray-800 flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-300">Conversation History</span>
+              <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-300 rounded-xl shadow-xl z-50 overflow-hidden">
+                <div className="p-3 border-b border-gray-200 flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Conversation History</span>
                   {sessions.length > 0 && (
                     <button
                       onClick={clearAllHistory}
@@ -483,8 +483,8 @@ export default function ClawdChat() {
                       <div
                         key={session.id}
                         onClick={() => switchToSession(session.id)}
-                        className={`p-3 cursor-pointer hover:bg-gray-800 border-b border-gray-800 last:border-0 flex items-start justify-between group ${
-                          session.id === currentSessionId ? 'bg-gray-800/50' : ''
+                        className={`p-3 cursor-pointer hover:bg-gray-50 border-b border-gray-200 last:border-0 flex items-start justify-between group ${
+                          session.id === currentSessionId ? 'bg-gray-50/50' : ''
                         }`}
                       >
                         <div className="flex-1 min-w-0">
@@ -519,18 +519,18 @@ export default function ClawdChat() {
       </div>
 
       {/* Chat area */}
-      <div className="flex-1 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col">
+      <div className="flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col">
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {dataLoading ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <Loader2 size={32} className="text-blue-400 animate-spin mb-4" />
-              <p className="text-gray-400">Loading live dashboard data into analyst memory...</p>
+              <p className="text-gray-600">Loading live dashboard data into analyst memory...</p>
               <p className="text-xs text-gray-600 mt-2">Fetching scores, complaints, regulatory actions, crisis scenarios...</p>
             </div>
           ) : messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <Bot size={48} className="text-gray-700 mb-4" />
-              <h3 className="text-lg font-medium text-gray-400 mb-2">Ask anything about reputation risk</h3>
+              <h3 className="text-lg font-medium text-gray-600 mb-2">Ask anything about reputation risk</h3>
               <p className="text-sm text-gray-600 mb-6 max-w-md">
                 The analyst has full context of all dashboard data — scores, complaints, regulatory actions, peer benchmarks, crisis scenarios, and board report.
               </p>
@@ -539,7 +539,7 @@ export default function ClawdChat() {
                   <button
                     key={i}
                     onClick={() => sendMessage(prompt)}
-                    className="flex items-center gap-2 text-left px-3 py-2 text-xs text-gray-400 bg-gray-800/50 border border-gray-700/50 rounded-lg hover:bg-gray-800 hover:text-gray-200 transition-colors"
+                    className="flex items-center gap-2 text-left px-3 py-2 text-xs text-gray-600 bg-gray-50/50 border border-gray-300/50 rounded-lg hover:bg-gray-50 hover:text-gray-200 transition-colors"
                   >
                     <Sparkles size={12} className="text-blue-500 shrink-0" />
                     {prompt}
@@ -557,8 +557,8 @@ export default function ClawdChat() {
                 )}
                 <div className={`max-w-[80%] rounded-xl px-4 py-3 text-sm ${
                   msg.role === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-800 text-gray-300'
+                    ? 'bg-blue-600 text-gray-900'
+                    : 'bg-gray-50 text-gray-700'
                 }`}>
                   {msg.role === 'assistant' ? (
                     <div dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }} />
@@ -567,8 +567,8 @@ export default function ClawdChat() {
                   )}
                 </div>
                 {msg.role === 'user' && (
-                  <div className="w-7 h-7 rounded-full bg-gray-700 flex items-center justify-center shrink-0">
-                    <User size={14} className="text-gray-400" />
+                  <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                    <User size={14} className="text-gray-600" />
                   </div>
                 )}
               </div>
@@ -580,7 +580,7 @@ export default function ClawdChat() {
               <div className="w-7 h-7 rounded-full bg-blue-600/20 flex items-center justify-center shrink-0">
                 <Bot size={14} className="text-blue-400" />
               </div>
-              <div className="bg-gray-800 rounded-xl px-4 py-3">
+              <div className="bg-gray-50 rounded-xl px-4 py-3">
                 <div className="flex gap-1">
                   <div className="w-2 h-2 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: '0ms' }} />
                   <div className="w-2 h-2 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -600,18 +600,18 @@ export default function ClawdChat() {
         </div>
 
         {/* Input */}
-        <form onSubmit={handleSubmit} className="border-t border-gray-800 p-3 flex gap-2">
+        <form onSubmit={handleSubmit} className="border-t border-gray-200 p-3 flex gap-2">
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
             placeholder="Ask about risk scores, peer comparisons, regulatory trends..."
-            className="flex-1 bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 placeholder-gray-600"
+            className="flex-1 bg-gray-50 border border-gray-300 text-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 placeholder-gray-600"
             disabled={loading || dataLoading}
           />
           <button
             type="submit"
             disabled={loading || dataLoading || !input.trim()}
-            className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-50 disabled:hover:bg-blue-600 transition-colors"
+            className="px-4 py-2.5 bg-blue-600 text-gray-900 rounded-lg hover:bg-blue-500 disabled:opacity-50 disabled:hover:bg-blue-600 transition-colors"
           >
             <Send size={16} />
           </button>

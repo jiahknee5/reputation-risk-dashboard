@@ -11,7 +11,7 @@ function impactBadge(level: string) {
     Low: 'bg-green-500/20 text-green-400',
   }
   return (
-    <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[level] || 'bg-gray-500/20 text-gray-400'}`}>
+    <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[level] || 'bg-gray-500/20 text-gray-600'}`}>
       {level}
     </span>
   )
@@ -65,13 +65,13 @@ export default function StakeholderImpact() {
       />
 
       {data.map((bankData) => (
-        <div key={bankData.bank.id} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-          <div className="p-4 border-b border-gray-800">
-            <h3 className="text-sm font-semibold text-white">
+        <div key={bankData.bank.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="p-4 border-b border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-900">
               {bankData.bank.name} <span className="text-gray-500">({bankData.bank.ticker})</span>
             </h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-gray-800">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-gray-200">
             {bankData.stakeholders.map((stakeholder) => (
               <div key={stakeholder.group} className="p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -80,7 +80,7 @@ export default function StakeholderImpact() {
                       stakeholder.impact_level === 'High' ? 'bg-red-500' :
                       stakeholder.impact_level === 'Moderate' ? 'bg-yellow-500' : 'bg-green-500'
                     }`} />
-                    <span className="text-sm font-medium text-gray-300">{stakeholder.group}</span>
+                    <span className="text-sm font-medium text-gray-700">{stakeholder.group}</span>
                   </div>
                   {impactBadge(stakeholder.impact_level)}
                 </div>
@@ -91,7 +91,7 @@ export default function StakeholderImpact() {
                       <span className={`font-medium ${
                         String(value).startsWith('-') || ['High', 'Elevated', 'Declining'].includes(String(value))
                           ? 'text-red-400'
-                          : 'text-gray-300'
+                          : 'text-gray-700'
                       }`}>{value}</span>
                     </div>
                   ))}
@@ -103,7 +103,7 @@ export default function StakeholderImpact() {
       ))}
 
       {/* Legend */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+      <div className="bg-white border border-gray-200 rounded-xl p-4">
         <h4 className="text-xs font-medium text-gray-500 mb-3">Impact Level Definitions</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
           <div className="flex gap-2">

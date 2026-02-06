@@ -36,11 +36,11 @@ function DriverBar({ name, score }: { name: string; score: number }) {
     score < 30 ? 'bg-green-500' : score < 50 ? 'bg-yellow-500' : score < 70 ? 'bg-orange-500' : 'bg-red-500'
   return (
     <div className="flex items-center gap-2 text-xs">
-      <span className="w-24 text-gray-300 truncate text-[11px]">{name}</span>
-      <div className="flex-1 bg-gray-800 rounded-full h-1.5">
+      <span className="w-24 text-gray-700 truncate text-[11px]">{name}</span>
+      <div className="flex-1 bg-gray-50 rounded-full h-1.5">
         <div className={`${color} h-1.5 rounded-full`} style={{ width: `${width}%` }} />
       </div>
-      <span className="w-7 text-right text-gray-300 text-[11px]">{Math.round(score)}</span>
+      <span className="w-7 text-right text-gray-700 text-[11px]">{Math.round(score)}</span>
     </div>
   )
 }
@@ -53,7 +53,7 @@ function ESGBadge({ theme, count }: { theme: string; count: number }) {
   }
   const labels: Record<string, string> = { S: 'Social', G: 'Governance', E: 'Environmental' }
   return (
-    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${colors[theme] || 'bg-gray-500/20 text-gray-400'}`}>
+    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${colors[theme] || 'bg-gray-500/20 text-gray-600'}`}>
       {labels[theme] || theme} ({count})
     </span>
   )
@@ -120,12 +120,12 @@ export default function Dashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold text-white">Executive Dashboard</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Executive Dashboard</h2>
           <p className="text-sm text-gray-500 mt-1">Loading real-time data...</p>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map(i => (
-            <div key={i} className="bg-gray-900 border border-gray-800 rounded-xl p-6 h-64 animate-pulse" />
+            <div key={i} className="bg-white border border-gray-200 rounded-xl p-6 h-64 animate-pulse" />
           ))}
         </div>
       </div>
@@ -180,7 +180,7 @@ export default function Dashboard() {
       >
         <div className="flex items-center gap-2">
           <select
-            className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
+            className="bg-gray-50 border border-gray-300 text-gray-700 rounded-lg px-3 py-2 text-sm"
             value={selectedGroupId}
             onChange={(e) => setSelectedGroupId(e.target.value)}
           >
@@ -207,10 +207,10 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Primary score card - US Bank */}
         {primaryBank && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col items-center gap-3">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col items-center gap-3">
             <div className="flex items-center gap-2 w-full">
               <div className="flex-1">
-                <h3 className="text-sm font-medium text-white">
+                <h3 className="text-sm font-medium text-gray-900">
                   {primaryBank.bank.name}
                 </h3>
                 <p className="text-[10px] text-gray-500">Primary Score</p>
@@ -234,9 +234,9 @@ export default function Dashboard() {
         )}
 
         {/* Peer ranking */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
           <div className="mb-3">
-            <h3 className="text-sm font-medium text-white">Peer Ranking</h3>
+            <h3 className="text-sm font-medium text-gray-900">Peer Ranking</h3>
             <p className="text-[10px] text-gray-500">23 Cat I/II/III Banks</p>
           </div>
           <div className="flex flex-wrap gap-3 justify-center">
@@ -248,9 +248,9 @@ export default function Dashboard() {
 
         {/* Trend chart */}
         {primaryBank && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
             <div className="mb-3">
-              <h3 className="text-sm font-medium text-white">
+              <h3 className="text-sm font-medium text-gray-900">
                 60-Day Trend
               </h3>
               <p className="text-[10px] text-gray-500">{primaryBank.bank.ticker} Composite Score</p>
@@ -280,21 +280,21 @@ export default function Dashboard() {
 
       <div>
         <div className="mb-2">
-          <h3 className="text-sm font-medium text-white">All Institutions</h3>
+          <h3 className="text-sm font-medium text-gray-900">All Institutions</h3>
           <p className="text-[10px] text-gray-500">Category I/II/III Banks — Sorted by Risk</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
           {overview.map(b => (
             <div
               key={b.bank.id}
-              className="bg-gray-900 border border-gray-800 rounded-xl p-3 hover:border-gray-700 hover:scale-105 transition-all cursor-pointer"
+              className="bg-white border border-gray-200 rounded-xl p-3 hover:border-gray-300 hover:scale-105 transition-all cursor-pointer"
               onClick={() => setSelectedBankForModal(b)}
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <WatchlistToggle bankId={b.bank.id} />
                   <div className="flex-1 min-w-0">
-                    <span className="font-medium text-white text-sm block truncate">{b.bank.name}</span>
+                    <span className="font-medium text-gray-900 text-sm block truncate">{b.bank.name}</span>
                     <span className="text-gray-500 text-[10px]">{b.bank.ticker}</span>
                   </div>
                 </div>
@@ -335,7 +335,7 @@ export default function Dashboard() {
             {/* ESG Flags */}
             {selectedBankForModal.esg_flags.length > 0 && (
               <div>
-                <h4 className="text-sm font-medium text-gray-400 mb-2">ESG Risk Themes</h4>
+                <h4 className="text-sm font-medium text-gray-600 mb-2">ESG Risk Themes</h4>
                 <div className="flex flex-wrap gap-2">
                   {selectedBankForModal.esg_flags.map(f => (
                     <ESGBadge key={f.theme} theme={f.theme} count={f.count} />
@@ -346,7 +346,7 @@ export default function Dashboard() {
 
             {/* Component Breakdown */}
             <div>
-              <h4 className="text-sm font-medium text-gray-400 mb-3">Risk Component Scores</h4>
+              <h4 className="text-sm font-medium text-gray-600 mb-3">Risk Component Scores</h4>
               <div className="space-y-3">
                 <DriverBar name="Media Sentiment" score={selectedBankForModal.media_sentiment_score} />
                 <DriverBar name="Consumer Complaints" score={selectedBankForModal.complaint_score} />
@@ -357,11 +357,11 @@ export default function Dashboard() {
 
             {/* Top Drivers */}
             <div>
-              <h4 className="text-sm font-medium text-gray-400 mb-3">Top Risk Drivers</h4>
+              <h4 className="text-sm font-medium text-gray-600 mb-3">Top Risk Drivers</h4>
               <div className="space-y-2">
                 {selectedBankForModal.top_drivers.map((driver, i) => (
-                  <div key={i} className="flex items-center justify-between bg-gray-800/30 rounded-lg p-3">
-                    <span className="text-sm text-gray-300">{driver.name}</span>
+                  <div key={i} className="flex items-center justify-between bg-gray-50/30 rounded-lg p-3">
+                    <span className="text-sm text-gray-700">{driver.name}</span>
                     <span className={`text-sm font-semibold ${
                       driver.score >= 70 ? 'text-red-400' : driver.score >= 50 ? 'text-orange-400' : 'text-yellow-400'
                     }`}>{Math.round(driver.score)}</span>
@@ -371,7 +371,7 @@ export default function Dashboard() {
             </div>
 
             {/* Data Source */}
-            <div className="pt-4 border-t border-gray-800">
+            <div className="pt-4 border-t border-gray-200">
               <DataSourceBadge source={selectedBankForModal.data_source} />
             </div>
           </div>

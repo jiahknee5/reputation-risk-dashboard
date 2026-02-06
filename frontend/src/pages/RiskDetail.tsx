@@ -124,7 +124,7 @@ export default function RiskDetail() {
       >
         <div className="flex items-center gap-2">
           <select
-            className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
+            className="bg-gray-50 border border-gray-300 text-gray-700 rounded-lg px-3 py-2 text-sm"
             value={selectedGroupId}
             onChange={(e) => {
               setSelectedGroupId(e.target.value)
@@ -143,7 +143,7 @@ export default function RiskDetail() {
             ))}
           </select>
           <select
-            className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
+            className="bg-gray-50 border border-gray-300 text-gray-700 rounded-lg px-3 py-2 text-sm"
             value={selectedBank}
             onChange={(e) => setSelectedBank(Number(e.target.value))}
           >
@@ -164,12 +164,12 @@ export default function RiskDetail() {
 
       {/* Score overview */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col items-center justify-center">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center">
           <RiskGauge score={detail.composite_score} label="Composite Score" />
         </div>
 
-        <div className="lg:col-span-3 bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-gray-400 mb-4">Risk Component Breakdown</h3>
+        <div className="lg:col-span-3 bg-white border border-gray-200 rounded-xl p-4">
+          <h3 className="text-sm font-medium text-gray-600 mb-4">Risk Component Breakdown</h3>
           <div className="space-y-4">
             {detail.components.map((c) => (
               <div key={c.name} className="group cursor-pointer" onClick={() => setDrilldownComponent(c.name)}>
@@ -188,7 +188,7 @@ export default function RiskDetail() {
                   }`}>{Math.round(c.score)}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="flex-1 bg-gray-800 rounded-full h-3 group-hover:bg-gray-700 transition-colors">
+                  <div className="flex-1 bg-gray-50 rounded-full h-3 group-hover:bg-gray-100 transition-colors">
                     <div
                       className={`h-3 rounded-full transition-all ${
                         c.score < 30 ? 'bg-green-500 group-hover:bg-green-400' :
@@ -200,7 +200,7 @@ export default function RiskDetail() {
                     />
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1 group-hover:text-gray-400 transition-colors">{c.description}</p>
+                <p className="text-xs text-gray-500 mt-1 group-hover:text-gray-600 transition-colors">{c.description}</p>
               </div>
             ))}
           </div>
@@ -214,8 +214,8 @@ export default function RiskDetail() {
       />
 
       {/* Component trend chart */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-        <h3 className="text-sm font-medium text-gray-400 mb-4">60-Day Component Trend</h3>
+      <div className="bg-white border border-gray-200 rounded-xl p-4">
+        <h3 className="text-sm font-medium text-gray-600 mb-4">60-Day Component Trend</h3>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={detail.history}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
@@ -232,8 +232,8 @@ export default function RiskDetail() {
       </div>
 
       {/* Active alerts */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-        <h3 className="text-sm font-medium text-gray-400 mb-4">Active Risk Alerts</h3>
+      <div className="bg-white border border-gray-200 rounded-xl p-4">
+        <h3 className="text-sm font-medium text-gray-600 mb-4">Active Risk Alerts</h3>
         <div className="space-y-3">
           {detail.alerts.map((alert, i) => (
             <div key={i} className={`p-4 rounded-lg border ${
@@ -245,7 +245,7 @@ export default function RiskDetail() {
                 {severityBadge(alert.severity)}
                 <span className="text-xs text-gray-500">{alert.date}</span>
               </div>
-              <p className="text-sm text-gray-300 mt-2">{alert.message}</p>
+              <p className="text-sm text-gray-700 mt-2">{alert.message}</p>
             </div>
           ))}
         </div>

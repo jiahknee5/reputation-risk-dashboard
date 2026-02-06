@@ -103,7 +103,7 @@ export default function BoardReports() {
         description={`Executive reputation risk summary for board and risk committee review${selectedGroup ? ` — ${selectedGroup.name} peer group` : ' — all monitored institutions'}. Aggregated scores, key findings, priority recommendations, and detailed component breakdowns.`}
       >
         <select
-          className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
+          className="bg-gray-50 border border-gray-300 text-gray-700 rounded-lg px-3 py-2 text-sm"
           value={selectedGroupId}
           onChange={(e) => setSelectedGroupId(e.target.value)}
         >
@@ -119,10 +119,10 @@ export default function BoardReports() {
       <InsightBox {...insight} />
 
       {/* Report header */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-white">Reputation Risk Assessment</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Reputation Risk Assessment</h3>
             <p className="text-xs text-gray-500 mt-1">Reporting Period: {report.period}</p>
           </div>
           <div className="flex items-center gap-2">
@@ -148,13 +148,13 @@ export default function BoardReports() {
             />
             <div className="text-right ml-2">
               <p className="text-xs text-gray-500">Report Generated</p>
-              <p className="text-sm text-gray-400">{report.report_date}</p>
+              <p className="text-sm text-gray-600">{report.report_date}</p>
             </div>
           </div>
         </div>
-        <div className="bg-gray-800/50 rounded-lg p-4">
-          <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Executive Summary</h4>
-          <p className="text-sm text-gray-300 leading-relaxed">
+        <div className="bg-gray-50/50 rounded-lg p-4">
+          <h4 className="text-xs font-medium text-gray-600 uppercase tracking-wider mb-2">Executive Summary</h4>
+          <p className="text-sm text-gray-700 leading-relaxed">
             {selectedGroup ? `${selectedGroup.name}: ` : ''}{report.executive_summary}
           </p>
           {selectedGroup && (
@@ -166,9 +166,9 @@ export default function BoardReports() {
       </div>
 
       {/* Peer group overview */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium text-gray-400">Peer Group Risk Snapshot</h3>
+          <h3 className="text-sm font-medium text-gray-600">Peer Group Risk Snapshot</h3>
           <div className="text-right">
             <span className="text-xs text-gray-500">Peer Average: </span>
             <span className={`text-sm font-bold ${
@@ -188,26 +188,26 @@ export default function BoardReports() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Key findings */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <h3 className="text-sm font-medium text-gray-400 mb-4">Key Findings</h3>
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <h3 className="text-sm font-medium text-gray-600 mb-4">Key Findings</h3>
           <div className="space-y-3">
             {report.key_findings.map((finding, i) => (
               <div key={i} className="flex gap-3">
                 <span className="text-blue-400 font-bold text-sm mt-0.5">{i + 1}.</span>
-                <p className="text-sm text-gray-300">{finding}</p>
+                <p className="text-sm text-gray-700">{finding}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* Recommendations */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <h3 className="text-sm font-medium text-gray-400 mb-4">Recommendations</h3>
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <h3 className="text-sm font-medium text-gray-600 mb-4">Recommendations</h3>
           <div className="space-y-3">
             {report.recommendations.map((rec, i) => (
-              <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-gray-800/30">
+              <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50/30">
                 {priorityBadge(rec.priority)}
-                <p className="text-sm text-gray-300 flex-1">{rec.action}</p>
+                <p className="text-sm text-gray-700 flex-1">{rec.action}</p>
               </div>
             ))}
           </div>
@@ -215,14 +215,14 @@ export default function BoardReports() {
       </div>
 
       {/* Detailed scores table */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-gray-800">
-          <h3 className="text-sm font-medium text-gray-400">Detailed Risk Scores</h3>
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="p-4 border-b border-gray-200">
+          <h3 className="text-sm font-medium text-gray-600">Detailed Risk Scores</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-gray-500 text-xs border-b border-gray-800">
+              <tr className="text-gray-500 text-xs border-b border-gray-200">
                 <th className="text-left p-3">Institution</th>
                 <th className="text-right p-3">Composite</th>
                 <th className="text-right p-3">Media Sentiment</th>
@@ -233,15 +233,15 @@ export default function BoardReports() {
             </thead>
             <tbody>
               {report.banks.map((b) => (
-                <tr key={b.bank.id} className="border-b border-gray-800/50">
+                <tr key={b.bank.id} className="border-b border-gray-200/50">
                   <td className="p-3 text-gray-200 font-medium">{b.bank.name} <span className="text-gray-500">({b.bank.ticker})</span></td>
                   <td className={`p-3 text-right font-bold ${
                     b.composite_score >= 50 ? 'text-red-400' : b.composite_score >= 30 ? 'text-yellow-400' : 'text-green-400'
                   }`}>{b.composite_score}</td>
-                  <td className="p-3 text-right text-gray-400">{b.media_sentiment_score}</td>
-                  <td className="p-3 text-right text-gray-400">{b.complaint_score}</td>
-                  <td className="p-3 text-right text-gray-400">{b.market_score}</td>
-                  <td className="p-3 text-gray-400 text-xs">{b.top_drivers[0]?.name} ({Math.round(b.top_drivers[0]?.score)})</td>
+                  <td className="p-3 text-right text-gray-600">{b.media_sentiment_score}</td>
+                  <td className="p-3 text-right text-gray-600">{b.complaint_score}</td>
+                  <td className="p-3 text-right text-gray-600">{b.market_score}</td>
+                  <td className="p-3 text-gray-600 text-xs">{b.top_drivers[0]?.name} ({Math.round(b.top_drivers[0]?.score)})</td>
                 </tr>
               ))}
             </tbody>
@@ -250,7 +250,7 @@ export default function BoardReports() {
       </div>
 
       {/* Methodology note */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
         <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Methodology</h4>
         <p className="text-xs text-gray-600 leading-relaxed">
           Composite reputation risk scores are calculated using a weighted combination of five components:
