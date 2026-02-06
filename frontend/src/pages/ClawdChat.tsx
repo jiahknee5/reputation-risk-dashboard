@@ -6,8 +6,6 @@ import {
   getBoardReport, getComplaintSummary, type DashboardOverview,
 } from '../services/api'
 
-const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_KEY || ''
-
 interface Message {
   role: 'user' | 'assistant'
   content: string
@@ -359,11 +357,6 @@ export default function ClawdChat() {
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || !systemPrompt) return
 
-    if (!ANTHROPIC_KEY) {
-      setError('Anthropic API key not configured. Set VITE_ANTHROPIC_KEY in .env')
-      return
-    }
-
     // Create a new session if we don't have one
     let activeSessionId = currentSessionId
     if (!activeSessionId) {
@@ -392,17 +385,13 @@ export default function ClawdChat() {
     setError(null)
 
     try {
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      // Use backend proxy instead of direct Anthropic API call
+      const resp = await fetch('/api/reprisk/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': ANTHROPIC_KEY,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1024,
           system: systemPrompt,
           messages: newMessages.map(m => ({ role: m.role, content: m.content })),
         }),
@@ -410,7 +399,7 @@ export default function ClawdChat() {
 
       if (!resp.ok) {
         const errData = await resp.json().catch(() => ({}))
-        throw new Error(errData.error?.message || `API error ${resp.status}`)
+        throw new Error(errData.error || `API error ${resp.status}`)
       }
 
       const data = await resp.json()
