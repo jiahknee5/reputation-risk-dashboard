@@ -30,12 +30,34 @@ function setCache(key: string, data: unknown) {
 
 // CFPB company name mappings
 const BANK_CFPB_NAMES: Record<string, string[]> = {
-  'US Bancorp': ['U.S. BANCORP', 'US BANK', 'U.S. BANK NATIONAL ASSOCIATION'],
+  // Category I
   'JPMorgan Chase': ['JPMORGAN CHASE & CO.', 'JPMORGAN CHASE BANK', 'CHASE BANK'],
-  'Wells Fargo': ['WELLS FARGO & COMPANY', 'WELLS FARGO BANK'],
   'Bank of America': ['BANK OF AMERICA', 'BANK OF AMERICA, NATIONAL ASSOCIATION'],
+  'Citigroup': ['CITIBANK', 'CITIGROUP INC.', 'CITI'],
+  'Wells Fargo': ['WELLS FARGO & COMPANY', 'WELLS FARGO BANK'],
+  'Goldman Sachs': ['GOLDMAN SACHS BANK USA', 'GOLDMAN SACHS'],
+  'Morgan Stanley': ['MORGAN STANLEY BANK', 'MORGAN STANLEY'],
+  'BNY Mellon': ['THE BANK OF NEW YORK MELLON', 'BNY MELLON'],
+  'State Street': ['STATE STREET CORPORATION', 'STATE STREET BANK'],
+
+  // Category II
+  'US Bancorp': ['U.S. BANCORP', 'US BANK', 'U.S. BANK NATIONAL ASSOCIATION'],
   'PNC Financial': ['PNC BANK', 'PNC FINANCIAL SERVICES'],
   'Truist Financial': ['TRUIST BANK', 'TRUIST FINANCIAL'],
+  'Capital One': ['CAPITAL ONE', 'CAPITAL ONE BANK'],
+  'TD Bank': ['TD BANK', 'TD BANK USA'],
+  'Fifth Third': ['FIFTH THIRD BANK', 'FIFTH THIRD'],
+  'BMO Harris': ['BMO HARRIS BANK', 'BMO BANK'],
+  'Citizens Financial': ['CITIZENS BANK', 'CITIZENS FINANCIAL'],
+
+  // Category III
+  'M&T Bank': ['M&T BANK', 'MANUFACTURERS AND TRADERS TRUST'],
+  'KeyCorp': ['KEYBANK', 'KEY BANK'],
+  'Huntington': ['HUNTINGTON NATIONAL BANK', 'HUNTINGTON BANK'],
+  'Regions Financial': ['REGIONS BANK', 'REGIONS FINANCIAL'],
+  'Ally Financial': ['ALLY BANK', 'ALLY FINANCIAL'],
+  'American Express': ['AMERICAN EXPRESS', 'AMEX'],
+  'Discover': ['DISCOVER BANK', 'DISCOVER FINANCIAL'],
 }
 
 // ESG category mapping for complaints

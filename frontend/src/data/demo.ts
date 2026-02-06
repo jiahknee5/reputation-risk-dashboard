@@ -26,22 +26,70 @@ export interface BankInfo {
   ticker: string
 }
 
+// Fed Category I: $700B+ assets OR $75B+ cross-jurisdictional (8 GSIBs)
+// Fed Category II: $250B-$700B assets
+// Fed Category III: $100B-$250B assets
+
 export const BANKS: BankInfo[] = [
-  { id: 1, name: 'US Bancorp', ticker: 'USB' },
+  // Category I (8 GSIBs)
   { id: 2, name: 'JPMorgan Chase', ticker: 'JPM' },
-  { id: 3, name: 'Wells Fargo', ticker: 'WFC' },
   { id: 4, name: 'Bank of America', ticker: 'BAC' },
+  { id: 7, name: 'Citigroup', ticker: 'C' },
+  { id: 3, name: 'Wells Fargo', ticker: 'WFC' },
+  { id: 8, name: 'Goldman Sachs', ticker: 'GS' },
+  { id: 9, name: 'Morgan Stanley', ticker: 'MS' },
+  { id: 10, name: 'BNY Mellon', ticker: 'BK' },
+  { id: 11, name: 'State Street', ticker: 'STT' },
+
+  // Category II
+  { id: 1, name: 'US Bancorp', ticker: 'USB' },
   { id: 5, name: 'PNC Financial', ticker: 'PNC' },
   { id: 6, name: 'Truist Financial', ticker: 'TFC' },
+  { id: 12, name: 'Capital One', ticker: 'COF' },
+  { id: 13, name: 'TD Bank', ticker: 'TD' },
+  { id: 14, name: 'Fifth Third', ticker: 'FITB' },
+  { id: 15, name: 'BMO Harris', ticker: 'BMO' },
+  { id: 16, name: 'Citizens Financial', ticker: 'CFG' },
+
+  // Category III
+  { id: 17, name: 'M&T Bank', ticker: 'MTB' },
+  { id: 18, name: 'KeyCorp', ticker: 'KEY' },
+  { id: 19, name: 'Huntington', ticker: 'HBAN' },
+  { id: 20, name: 'Regions Financial', ticker: 'RF' },
+  { id: 21, name: 'Ally Financial', ticker: 'ALLY' },
+  { id: 22, name: 'American Express', ticker: 'AXP' },
+  { id: 23, name: 'Discover', ticker: 'DFS' },
 ]
 
 const RISK_PROFILES: Record<string, { base: number; vol: number }> = {
-  'US Bancorp': { base: 35, vol: 8 },
+  // Category I
   'JPMorgan Chase': { base: 30, vol: 10 },
-  'Wells Fargo': { base: 55, vol: 12 },
   'Bank of America': { base: 38, vol: 9 },
+  'Citigroup': { base: 45, vol: 11 },
+  'Wells Fargo': { base: 55, vol: 12 },
+  'Goldman Sachs': { base: 28, vol: 8 },
+  'Morgan Stanley': { base: 32, vol: 9 },
+  'BNY Mellon': { base: 25, vol: 6 },
+  'State Street': { base: 27, vol: 7 },
+
+  // Category II
+  'US Bancorp': { base: 35, vol: 8 },
   'PNC Financial': { base: 32, vol: 7 },
   'Truist Financial': { base: 40, vol: 9 },
+  'Capital One': { base: 42, vol: 10 },
+  'TD Bank': { base: 36, vol: 8 },
+  'Fifth Third': { base: 38, vol: 9 },
+  'BMO Harris': { base: 34, vol: 7 },
+  'Citizens Financial': { base: 37, vol: 8 },
+
+  // Category III
+  'M&T Bank': { base: 33, vol: 7 },
+  'KeyCorp': { base: 39, vol: 8 },
+  'Huntington': { base: 35, vol: 7 },
+  'Regions Financial': { base: 41, vol: 9 },
+  'Ally Financial': { base: 44, vol: 10 },
+  'American Express': { base: 31, vol: 8 },
+  'Discover': { base: 43, vol: 9 },
 }
 
 const NEWS_TEMPLATES: [string, number][] = [

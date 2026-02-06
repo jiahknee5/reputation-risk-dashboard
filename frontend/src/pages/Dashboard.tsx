@@ -3,6 +3,8 @@ import RiskGauge from '../components/RiskGauge'
 import AlertBanner from '../components/AlertBanner'
 import Watchlist from '../components/Watchlist'
 import { WatchlistToggle } from '../components/Watchlist'
+import PageObjective from '../components/PageObjective'
+import InsightBox from '../components/InsightBox'
 import { getDashboardOverview, getRiskHistory, getAlertThresholds, type DashboardOverview } from '../services/api'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -14,11 +16,11 @@ function DriverBar({ name, score }: { name: string; score: number }) {
     score < 30 ? 'bg-green-500' : score < 50 ? 'bg-yellow-500' : score < 70 ? 'bg-orange-500' : 'bg-red-500'
   return (
     <div className="flex items-center gap-2 text-xs">
-      <span className="w-36 text-gray-400 truncate">{name}</span>
-      <div className="flex-1 bg-gray-800 rounded-full h-2">
-        <div className={`${color} h-2 rounded-full`} style={{ width: `${width}%` }} />
+      <span className="w-24 text-gray-300 truncate text-[11px]">{name}</span>
+      <div className="flex-1 bg-gray-800 rounded-full h-1.5">
+        <div className={`${color} h-1.5 rounded-full`} style={{ width: `${width}%` }} />
       </div>
-      <span className="w-8 text-right text-gray-400">{Math.round(score)}</span>
+      <span className="w-7 text-right text-gray-300 text-[11px]">{Math.round(score)}</span>
     </div>
   )
 }
@@ -95,29 +97,70 @@ export default function Dashboard() {
     )
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Executive Dashboard</h2>
-          <p className="text-sm text-gray-500 mt-1">Composite Reputation Risk Overview</p>
-        </div>
-        {topBank && <DataSourceBadge source={topBank.data_source} />}
-      </div>
+  // Generate insight for US Bank
+  const peerAvg = overview.length > 0 ? Math.round(overview.reduce((sum, b) => sum + b.composite_score, 0) / overview.length) : 0
+  const usbInsight = primaryBank ? (() => {
+    const score = primaryBank.composite_score
+    const drivers = primaryBank.top_drivers
+    const topDriver = drivers[0]
 
+    if (score >= 70) {
+      return {
+        type: 'action' as const,
+        title: `${primaryBank.bank.name} requires immediate attention`,
+        message: `Composite score ${Math.round(score)} significantly elevated. Primary driver: ${topDriver.name} (${Math.round(topDriver.score)}).`,
+        detail: 'Recommend activating crisis response protocol and board escalation.'
+      }
+    } else if (score >= 50) {
+      return {
+        type: 'warning' as const,
+        title: `${primaryBank.bank.name} shows elevated risk vs peers`,
+        message: `Composite score ${Math.round(score)} above peer average (${peerAvg}). Key driver: ${topDriver.name}.`,
+        detail: 'Monitor closely for further deterioration.'
+      }
+    } else if (score <= 30) {
+      return {
+        type: 'positive' as const,
+        title: `${primaryBank.bank.name} positioned favorably`,
+        message: `Composite score ${Math.round(score)} well below peer average (${peerAvg}), indicating strong reputation positioning.`,
+        detail: 'Continue current risk management practices.'
+      }
+    } else {
+      return {
+        type: 'finding' as const,
+        title: `${primaryBank.bank.name} within normal range`,
+        message: `Composite score ${Math.round(score)} aligned with peer average (${peerAvg}). Top driver: ${topDriver.name} (${Math.round(topDriver.score)}).`
+      }
+    }
+  })() : null
+
+  return (
+    <div className="space-y-4">
+      <PageObjective
+        title="Executive Dashboard"
+        objective="Identify which institutions require immediate attention"
+        description="Real-time composite reputation risk across 23 Category I/II/III banks with live CFPB complaint data, news sentiment, and regulatory signals."
+      >
+        {topBank && <DataSourceBadge source={topBank.data_source} />}
+      </PageObjective>
+
+      {usbInsight && <InsightBox {...usbInsight} />}
       <AlertBanner alerts={alerts} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Primary score card */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        {/* Primary score card - US Bank */}
         {primaryBank && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 flex flex-col items-center gap-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col items-center gap-3">
             <div className="flex items-center gap-2 w-full">
-              <h3 className="text-sm font-medium text-gray-400 flex-1">
-                {primaryBank.bank.name} ({primaryBank.bank.ticker})
-              </h3>
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-white">
+                  {primaryBank.bank.name}
+                </h3>
+                <p className="text-[10px] text-gray-500">Primary Score</p>
+              </div>
               <WatchlistToggle bankId={primaryBank.bank.id} />
             </div>
-            <RiskGauge score={primaryBank.composite_score} label="Composite Risk Score" />
+            <RiskGauge score={primaryBank.composite_score} label="Composite" />
             {primaryBank.esg_flags.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {primaryBank.esg_flags.slice(0, 3).map(f => (
@@ -125,7 +168,7 @@ export default function Dashboard() {
                 ))}
               </div>
             )}
-            <div className="w-full space-y-2 mt-2">
+            <div className="w-full space-y-1.5 mt-1">
               {primaryBank.top_drivers.map(d => (
                 <DriverBar key={d.name} name={d.name} score={d.score} />
               ))}
@@ -134,27 +177,33 @@ export default function Dashboard() {
         )}
 
         {/* Peer ranking */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <h3 className="text-sm font-medium text-gray-400 mb-4">Peer Risk Ranking</h3>
-          <div className="flex flex-wrap gap-4 justify-center">
-            {overview.map(b => (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <div className="mb-3">
+            <h3 className="text-sm font-medium text-white">Peer Ranking</h3>
+            <p className="text-[10px] text-gray-500">23 Cat I/II/III Banks</p>
+          </div>
+          <div className="flex flex-wrap gap-3 justify-center">
+            {overview.slice(0, 8).map(b => (
               <RiskGauge key={b.bank.id} score={b.composite_score} label={b.bank.ticker} size="sm" />
             ))}
           </div>
         </div>
 
         {/* Trend chart */}
-        {topBank && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <h3 className="text-sm font-medium text-gray-400 mb-4">
-              60-Day Trend: {topBank.bank.ticker}
-            </h3>
-            <ResponsiveContainer width="100%" height={200}>
+        {primaryBank && (
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <div className="mb-3">
+              <h3 className="text-sm font-medium text-white">
+                60-Day Trend
+              </h3>
+              <p className="text-[10px] text-gray-500">{primaryBank.bank.ticker} Composite Score</p>
+            </div>
+            <ResponsiveContainer width="100%" height={160}>
               <LineChart data={history}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
-                <YAxis domain={[0, 100]} tick={{ fill: '#6b7280', fontSize: 10 }} />
-                <Tooltip contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151' }} labelStyle={{ color: '#9ca3af' }} />
+                <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
+                <YAxis domain={[0, 100]} tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                <Tooltip contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151' }} labelStyle={{ color: '#d1d5db' }} />
                 <Line type="monotone" dataKey="composite_score" stroke="#3b82f6" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
@@ -167,29 +216,34 @@ export default function Dashboard() {
 
       {/* Bank detail cards */}
       <div>
-        <h3 className="text-lg font-semibold text-white mb-3">All Banks</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="mb-2">
+          <h3 className="text-sm font-medium text-white">All Institutions</h3>
+          <p className="text-[10px] text-gray-500">Category I/II/III Banks — Sorted by Risk</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
           {overview.map(b => (
-            <div key={b.bank.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
+            <div key={b.bank.id} className="bg-gray-900 border border-gray-800 rounded-xl p-3 hover:border-gray-700 transition-colors cursor-pointer">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
                   <WatchlistToggle bankId={b.bank.id} />
-                  <span className="font-medium text-white">{b.bank.name}</span>
-                  <span className="text-gray-500 text-sm">({b.bank.ticker})</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-white text-sm block truncate">{b.bank.name}</span>
+                    <span className="text-gray-500 text-[10px]">{b.bank.ticker}</span>
+                  </div>
                 </div>
                 <RiskGauge score={b.composite_score} label="" size="sm" />
               </div>
               {b.esg_flags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-2">
-                  {b.esg_flags.slice(0, 3).map(f => (
+                  {b.esg_flags.slice(0, 2).map(f => (
                     <ESGBadge key={f.theme} theme={f.theme} count={f.count} />
                   ))}
                 </div>
               )}
-              <div className="space-y-1.5">
-                <DriverBar name="Media Sentiment" score={b.media_sentiment_score} />
-                <DriverBar name="Customer Complaints" score={b.complaint_score} />
-                <DriverBar name="Market Signal" score={b.market_score} />
+              <div className="space-y-1">
+                <DriverBar name="Media" score={b.media_sentiment_score} />
+                <DriverBar name="Complaints" score={b.complaint_score} />
+                <DriverBar name="Market" score={b.market_score} />
               </div>
             </div>
           ))}

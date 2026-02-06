@@ -95,16 +95,19 @@ export default function Monitoring() {
       </PageObjective>
 
       {/* Volume chart */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium text-gray-400">
-            Signal Volume (30 Days)
-            {selectedDate && (
-              <span className="ml-2 text-xs text-blue-400">
-                • Filtered by {selectedDate}
-              </span>
-            )}
-          </h3>
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h3 className="text-sm font-medium text-white">
+              Signal Volume (30 Days)
+              {selectedDate && (
+                <span className="ml-2 text-xs text-blue-400">
+                  • {selectedDate}
+                </span>
+              )}
+            </h3>
+            <p className="text-[10px] text-gray-500">Identify volume spikes by source</p>
+          </div>
           {selectedDate && (
             <button
               onClick={() => setSelectedDate(undefined)}
@@ -114,7 +117,7 @@ export default function Monitoring() {
             </button>
           )}
         </div>
-        <ResponsiveContainer width="100%" height={200}>
+        <ResponsiveContainer width="100%" height={160}>
           <BarChart
             data={volumeByDate}
             onClick={(data) => {
@@ -168,11 +171,14 @@ export default function Monitoring() {
 
       {/* Signal feed */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-gray-800 flex items-center justify-between">
-          <h3 className="text-sm font-medium text-gray-400">
-            Signal Feed
-            <span className="ml-2 text-xs text-gray-600">({signals.length} signals)</span>
-          </h3>
+        <div className="p-3 border-b border-gray-800 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-white">
+              Signal Feed
+              <span className="ml-2 text-xs text-gray-500">({signals.length} signals)</span>
+            </h3>
+            <p className="text-[10px] text-gray-500">Live CFPB complaints + news sentiment</p>
+          </div>
           <div className="flex items-center gap-2">
             <select
               className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-2 py-1 text-xs"
@@ -199,36 +205,45 @@ export default function Monitoring() {
             )}
           </div>
         </div>
-        <div className="divide-y divide-gray-800 max-h-[600px] overflow-y-auto">
-          {signals.map((s) => (
-            <div
-              key={s.id}
-              className={`p-4 hover:bg-gray-800/50 transition-colors ${
+        <div className="divide-y divide-gray-800 max-h-[500px] overflow-y-auto">
+          {signals.map((s) => {
+            const content = (
+              <div className={`p-3 hover:bg-gray-800/50 transition-colors ${
                 s.is_anomaly ? 'border-l-2 border-red-500' : ''
-              }`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    {sourceBadge(s.source)}
-                    {s.is_anomaly && (
-                      <span className="px-2 py-0.5 rounded-full text-xs bg-red-500/20 text-red-400">
-                        Anomaly
-                      </span>
+              } ${s.url ? 'cursor-pointer' : ''}`}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      {sourceBadge(s.source)}
+                      {s.is_anomaly && (
+                        <span className="px-2 py-0.5 rounded-full text-xs bg-red-500/20 text-red-400">
+                          Anomaly
+                        </span>
+                      )}
+                      {sentimentBadge(s.sentiment_label, s.sentiment_score)}
+                    </div>
+                    <p className={`text-sm ${s.url ? 'text-blue-400 hover:text-blue-300' : 'text-gray-200'} truncate`}>
+                      {s.title}
+                    </p>
+                    {s.content && (
+                      <p className="text-xs text-gray-500 mt-1 truncate">{s.content}</p>
                     )}
-                    {sentimentBadge(s.sentiment_label, s.sentiment_score)}
                   </div>
-                  <p className="text-sm text-gray-200 truncate">{s.title}</p>
-                  {s.content && (
-                    <p className="text-xs text-gray-500 mt-1 truncate">{s.content}</p>
-                  )}
-                </div>
-                <div className="text-xs text-gray-600 whitespace-nowrap">
-                  {s.published_at ? new Date(s.published_at).toLocaleDateString() : ''}
+                  <div className="text-xs text-gray-500 whitespace-nowrap">
+                    {s.published_at ? new Date(s.published_at).toLocaleDateString() : ''}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+
+            return s.url ? (
+              <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer">
+                {content}
+              </a>
+            ) : (
+              <div key={s.id}>{content}</div>
+            )
+          })}
         </div>
       </div>
     </div>
