@@ -35,24 +35,36 @@ function sourceBadge(source: string) {
 
 export default function Monitoring() {
   const [selectedBank, setSelectedBank] = useState<number | undefined>(undefined)
+  const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined)
+  const [selectedSource, setSelectedSource] = useState<string | undefined>(undefined)
   const banks = useMemo(() => getBanks(), [])
-  const [signals, setSignals] = useState<Awaited<ReturnType<typeof getSignals>>>([])
+  const [allSignals, setAllSignals] = useState<Awaited<ReturnType<typeof getSignals>>>([])
   const volume = useMemo(() => getSignalVolume(selectedBank), [selectedBank])
 
   useEffect(() => {
-    getSignals(selectedBank, 100).then(setSignals)
+    getSignals(selectedBank, 100).then(setAllSignals)
   }, [selectedBank])
 
-  // Aggregate volume by date for chart
+  // Filter signals by date and source
+  const signals = useMemo(() => {
+    return allSignals.filter(s => {
+      if (selectedDate && !s.published_at?.startsWith(selectedDate)) return false
+      if (selectedSource && s.source !== selectedSource) return false
+      return true
+    })
+  }, [allSignals, selectedDate, selectedSource])
+
+  // Aggregate volume by date AND source for stacked chart
   const volumeByDate = useMemo(() => {
-    return Object.values(
-      volume.reduce<Record<string, { date: string; count: number; avg_sentiment: number }>>((acc, v) => {
-        if (!acc[v.date]) acc[v.date] = { date: v.date, count: 0, avg_sentiment: 0 }
-        acc[v.date].count += v.count
-        acc[v.date].avg_sentiment = v.avg_sentiment
-        return acc
-      }, {}),
-    ).sort((a, b) => a.date.localeCompare(b.date))
+    const byDate = volume.reduce<Record<string, { date: string; news: number; social: number; cfpb: number; regulatory: number; market: number }>>((acc, v) => {
+      if (!acc[v.date]) acc[v.date] = { date: v.date, news: 0, social: 0, cfpb: 0, regulatory: 0, market: 0 }
+      const sourceKey = v.source as keyof Omit<typeof acc[string], 'date'>
+      if (sourceKey in acc[v.date]) {
+        acc[v.date][sourceKey] += v.count
+      }
+      return acc
+    }, {})
+    return Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date))
   }, [volume])
 
   return (
@@ -78,9 +90,33 @@ export default function Monitoring() {
 
       {/* Volume chart */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <h3 className="text-sm font-medium text-gray-400 mb-4">Signal Volume (30 Days)</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-medium text-gray-400">
+            Signal Volume (30 Days)
+            {selectedDate && (
+              <span className="ml-2 text-xs text-blue-400">
+                • Filtered by {selectedDate}
+              </span>
+            )}
+          </h3>
+          {selectedDate && (
+            <button
+              onClick={() => setSelectedDate(undefined)}
+              className="text-xs text-gray-500 hover:text-gray-300"
+            >
+              Clear date filter
+            </button>
+          )}
+        </div>
         <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={volumeByDate}>
+          <BarChart
+            data={volumeByDate}
+            onClick={(data) => {
+              if (data && data.activeLabel) {
+                setSelectedDate(data.activeLabel as string)
+              }
+            }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
             <XAxis
               dataKey="date"
@@ -91,26 +127,71 @@ export default function Monitoring() {
             <Tooltip
               contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151' }}
               labelStyle={{ color: '#9ca3af' }}
+              cursor={{ fill: '#374151', opacity: 0.3 }}
             />
-            <Bar dataKey="count" radius={[2, 2, 0, 0]}>
-              {volumeByDate.map((entry, i) => (
-                <Cell
-                  key={i}
-                  fill={entry.avg_sentiment > 0.1 ? '#22c55e' : entry.avg_sentiment < -0.1 ? '#ef4444' : '#6b7280'}
-                />
-              ))}
-            </Bar>
+            <Bar dataKey="news" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} />
+            <Bar dataKey="social" stackId="a" fill="#a855f7" radius={[0, 0, 0, 0]} />
+            <Bar dataKey="cfpb" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} />
+            <Bar dataKey="regulatory" stackId="a" fill="#ef4444" radius={[0, 0, 0, 0]} />
+            <Bar dataKey="market" stackId="a" fill="#06b6d4" radius={[2, 2, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
+        <div className="flex items-center gap-4 mt-4 text-xs">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: '#3b82f6' }} />
+            <span className="text-gray-400">News</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: '#a855f7' }} />
+            <span className="text-gray-400">Social</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: '#f97316' }} />
+            <span className="text-gray-400">CFPB</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: '#ef4444' }} />
+            <span className="text-gray-400">Regulatory</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: '#06b6d4' }} />
+            <span className="text-gray-400">Market</span>
+          </div>
+        </div>
       </div>
 
       {/* Signal feed */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-gray-800">
+        <div className="p-4 border-b border-gray-800 flex items-center justify-between">
           <h3 className="text-sm font-medium text-gray-400">
             Signal Feed
             <span className="ml-2 text-xs text-gray-600">({signals.length} signals)</span>
           </h3>
+          <div className="flex items-center gap-2">
+            <select
+              className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-2 py-1 text-xs"
+              value={selectedSource ?? ''}
+              onChange={(e) => setSelectedSource(e.target.value || undefined)}
+            >
+              <option value="">All Sources</option>
+              <option value="news">News</option>
+              <option value="social">Social</option>
+              <option value="cfpb">CFPB</option>
+              <option value="regulatory">Regulatory</option>
+              <option value="market">Market</option>
+            </select>
+            {(selectedDate || selectedSource) && (
+              <button
+                onClick={() => {
+                  setSelectedDate(undefined)
+                  setSelectedSource(undefined)
+                }}
+                className="text-xs text-gray-500 hover:text-gray-300"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
         </div>
         <div className="divide-y divide-gray-800 max-h-[600px] overflow-y-auto">
           {signals.map((s) => (
