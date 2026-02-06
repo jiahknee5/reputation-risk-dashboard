@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import RiskGauge from '../components/RiskGauge'
 import PageObjective from '../components/PageObjective'
 import InsightBox from '../components/InsightBox'
@@ -8,9 +8,68 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend,
 } from 'recharts'
 
+interface PeerGroup {
+  id: string
+  name: string
+  description: string
+  bankIds: number[]
+  createdAt: number
+  updatedAt: number
+}
+
+function loadPeerGroups(): PeerGroup[] {
+  try {
+    const stored = localStorage.getItem('reprisk-peer-groups')
+    return stored ? JSON.parse(stored) : []
+  } catch {
+    return []
+  }
+}
+
 export default function PeerBenchmarking() {
-  const data = useMemo(() => getPeerBenchmarking(), [])
+  const allData = useMemo(() => getPeerBenchmarking(), [])
   const [selectedBank, setSelectedBank] = useState<string | null>(null)
+  const [peerGroups, setPeerGroups] = useState<PeerGroup[]>([])
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('')
+
+  // Load peer groups on mount
+  useEffect(() => {
+    setPeerGroups(loadPeerGroups())
+  }, [])
+
+  // Filter data by selected peer group
+  const data = useMemo(() => {
+    if (!selectedGroupId) return allData
+
+    const group = peerGroups.find(g => g.id === selectedGroupId)
+    if (!group) return allData
+
+    const filteredBanks = allData.banks.filter(b => group.bankIds.includes(b.bank.id))
+
+    // Recalculate peer average for this group
+    const peerAverage = filteredBanks.length > 0
+      ? Math.round(filteredBanks.reduce((sum, b) => sum + b.composite_score, 0) / filteredBanks.length)
+      : allData.peer_average
+
+    // Recalculate component averages
+    const component_averages = filteredBanks.length > 0 ? {
+      media_sentiment: Math.round(filteredBanks.reduce((sum, b) => sum + b.media_sentiment_score, 0) / filteredBanks.length),
+      complaints: Math.round(filteredBanks.reduce((sum, b) => sum + b.complaint_score, 0) / filteredBanks.length),
+      market: Math.round(filteredBanks.reduce((sum, b) => sum + b.market_score, 0) / filteredBanks.length),
+    } : allData.component_averages
+
+    // Recalculate deviations from new peer average
+    const banksWithDeviations = filteredBanks.map(b => ({
+      ...b,
+      deviation_from_peer: b.composite_score - peerAverage
+    }))
+
+    return {
+      banks: banksWithDeviations,
+      peer_average: peerAverage,
+      component_averages
+    }
+  }, [allData, selectedGroupId, peerGroups])
 
   const comparisonData = data.banks.map((b) => ({
     name: b.bank.ticker,
@@ -29,6 +88,9 @@ export default function PeerBenchmarking() {
   const radarColors = ['#3b82f6', '#ef4444', '#22c55e', '#f97316', '#a855f7', '#06b6d4']
 
   // Generate insight
+  const selectedGroup = peerGroups.find(g => g.id === selectedGroupId)
+  const groupName = selectedGroup ? selectedGroup.name : 'All Category I/II/III institutions'
+
   const usbData = data.banks.find(b => b.bank.ticker === 'USB')
   const insight = usbData ? (() => {
     const deviation = usbData.deviation_from_peer
@@ -37,34 +99,55 @@ export default function PeerBenchmarking() {
     if (deviation >= 10) {
       return {
         type: 'warning' as const,
-        title: 'US Bancorp above peer average',
+        title: `US Bancorp above ${groupName} average`,
         message: `Composite score ${usbData.composite_score} is ${deviation} points above peer average (${data.peer_average}).`,
         detail: `Primary driver: ${primaryDriver}. Indicates elevated reputation risk vs peer group.`
       }
     } else if (deviation <= -10) {
       return {
         type: 'positive' as const,
-        title: 'US Bancorp below peer average',
+        title: `US Bancorp below ${groupName} average`,
         message: `Composite score ${usbData.composite_score} is ${Math.abs(deviation)} points below peer average.`,
         detail: 'Favorable positioning within peer group. Continue current practices.'
       }
     } else {
       return {
         type: 'finding' as const,
-        title: 'US Bancorp within normal range',
+        title: `US Bancorp within ${groupName} range`,
         message: `Composite score ${usbData.composite_score} aligned with peer average (${data.peer_average}), deviation ${deviation > 0 ? '+' : ''}${deviation}.`,
-        detail: 'Peer group includes all Category I/II/III institutions.'
+        detail: `Peer group: ${groupName} (${data.banks.length} institutions).`
       }
     }
-  })() : null
+  })() : data.banks.length > 0 ? {
+    type: 'finding' as const,
+    title: `${groupName} peer comparison`,
+    message: `Analyzing ${data.banks.length} institution${data.banks.length !== 1 ? 's' : ''} in this peer group.`,
+    detail: `Average composite score: ${data.peer_average}. ${selectedGroup ? 'Custom peer group selected.' : 'Showing all banks.'}`
+  } : null
 
   return (
     <div className="space-y-4">
       <PageObjective
         title="Peer Benchmarking"
         objective="Assess relative positioning vs peer group"
-        description="Cross-institution risk comparison across all Category I/II/III banks with component-level breakdowns and deviation analysis."
-      />
+        description="Cross-institution risk comparison with component-level breakdowns and deviation analysis. Filter by custom peer groups or view all institutions."
+      >
+        <select
+          className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
+          value={selectedGroupId}
+          onChange={(e) => {
+            setSelectedGroupId(e.target.value)
+            setSelectedBank(null) // Reset bank selection when group changes
+          }}
+        >
+          <option value="">All Institutions (23)</option>
+          {peerGroups.map(group => (
+            <option key={group.id} value={group.id}>
+              {group.name} ({allData.banks.filter(b => group.bankIds.includes(b.bank.id)).length} banks)
+            </option>
+          ))}
+        </select>
+      </PageObjective>
 
       {insight && <InsightBox {...insight} />}
 
@@ -171,7 +254,9 @@ export default function PeerBenchmarking() {
       <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
         <div className="p-3 border-b border-gray-800">
           <h3 className="text-sm font-medium text-white">Detailed Risk Comparison</h3>
-          <p className="text-[10px] text-gray-500">All 23 institutions with component scores — Click row to highlight</p>
+          <p className="text-[10px] text-gray-500">
+            {selectedGroup ? `${selectedGroup.name} — ${data.banks.length} institutions` : `All 23 institutions with component scores`} — Click row to highlight
+          </p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

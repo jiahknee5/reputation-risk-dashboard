@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import RiskGauge from '../components/RiskGauge'
 import AlertBanner from '../components/AlertBanner'
 import Watchlist from '../components/Watchlist'
@@ -9,6 +9,24 @@ import { getDashboardOverview, getRiskHistory, getAlertThresholds, type Dashboar
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
+
+interface PeerGroup {
+  id: string
+  name: string
+  description: string
+  bankIds: number[]
+  createdAt: number
+  updatedAt: number
+}
+
+function loadPeerGroups(): PeerGroup[] {
+  try {
+    const stored = localStorage.getItem('reprisk-peer-groups')
+    return stored ? JSON.parse(stored) : []
+  } catch {
+    return []
+  }
+}
 
 function DriverBar({ name, score }: { name: string; score: number }) {
   const width = Math.max(0, Math.min(100, score))
@@ -50,19 +68,32 @@ function DataSourceBadge({ source }: { source: 'live' | 'demo' }) {
 }
 
 export default function Dashboard() {
-  const [overview, setOverview] = useState<DashboardOverview[]>([])
+  const [allOverview, setAllOverview] = useState<DashboardOverview[]>([])
   const [loading, setLoading] = useState(true)
   const [history, setHistory] = useState<{ date: string; composite_score: number }[]>([])
+  const [peerGroups, setPeerGroups] = useState<PeerGroup[]>([])
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('')
 
   useEffect(() => {
     getDashboardOverview().then(data => {
-      setOverview(data)
+      setAllOverview(data)
       setLoading(false)
       if (data.length > 0) {
         getRiskHistory(data[0].bank.id).then(setHistory)
       }
     })
+    setPeerGroups(loadPeerGroups())
   }, [])
+
+  // Filter by peer group
+  const overview = useMemo(() => {
+    if (!selectedGroupId) return allOverview
+
+    const group = peerGroups.find(g => g.id === selectedGroupId)
+    if (!group) return allOverview
+
+    return allOverview.filter(b => group.bankIds.includes(b.bank.id))
+  }, [allOverview, selectedGroupId, peerGroups])
 
   const topBank = overview[0]
   const primaryBank = overview.find(b => b.bank.ticker === 'USB') || overview[0]
@@ -134,14 +165,30 @@ export default function Dashboard() {
     }
   })() : null
 
+  const selectedGroup = peerGroups.find(g => g.id === selectedGroupId)
+
   return (
     <div className="space-y-4">
       <PageObjective
         title="Executive Dashboard"
         objective="Identify which institutions require immediate attention"
-        description="Real-time composite reputation risk across 23 Category I/II/III banks with live CFPB complaint data, news sentiment, and regulatory signals."
+        description={`Real-time composite reputation risk ${selectedGroup ? `for ${selectedGroup.name}` : 'across all Category I/II/III banks'} with live CFPB complaint data, news sentiment, and regulatory signals.`}
       >
-        {topBank && <DataSourceBadge source={topBank.data_source} />}
+        <div className="flex items-center gap-2">
+          <select
+            className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
+            value={selectedGroupId}
+            onChange={(e) => setSelectedGroupId(e.target.value)}
+          >
+            <option value="">All Institutions ({allOverview.length})</option>
+            {peerGroups.map(group => (
+              <option key={group.id} value={group.id}>
+                {group.name} ({allOverview.filter(b => group.bankIds.includes(b.bank.id)).length} banks)
+              </option>
+            ))}
+          </select>
+          {topBank && <DataSourceBadge source={topBank.data_source} />}
+        </div>
       </PageObjective>
 
       {usbInsight && <InsightBox {...usbInsight} />}

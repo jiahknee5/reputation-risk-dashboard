@@ -145,32 +145,67 @@ export default function PeerGroups() {
       {/* Quick Presets */}
       {groups.length === 0 && (
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-white mb-3">Quick Presets</h3>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => createPreset('Top 4 GSIBs', ['JPM', 'BAC', 'C', 'WFC'])}
-              className="px-3 py-2 text-xs text-gray-300 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              Top 4 GSIBs
-            </button>
-            <button
-              onClick={() => createPreset('Category II Regional', ['USB', 'PNC', 'TFC', 'COF'])}
-              className="px-3 py-2 text-xs text-gray-300 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              Category II Regional
-            </button>
-            <button
-              onClick={() => createPreset('Credit Card Issuers', ['JPM', 'BAC', 'C', 'COF', 'AXP', 'DFS'])}
-              className="px-3 py-2 text-xs text-gray-300 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              Credit Card Issuers
-            </button>
-            <button
-              onClick={() => createPreset('Custody Banks', ['BK', 'STT'])}
-              className="px-3 py-2 text-xs text-gray-300 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              Custody Banks
-            </button>
+          <h3 className="text-sm font-medium text-white mb-3">Quick Presets — Fed Categories</h3>
+          <div className="space-y-3">
+            <div>
+              <p className="text-xs text-gray-500 mb-2">Category I — GSIBs (8 banks)</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => createPreset('Category I — All GSIBs', ['JPM', 'BAC', 'C', 'WFC', 'GS', 'MS', 'BK', 'STT'])}
+                  className="px-3 py-2 text-xs text-gray-300 bg-blue-600/20 border border-blue-500/50 rounded-lg hover:bg-blue-600/30 transition-colors"
+                >
+                  All Category I (8)
+                </button>
+                <button
+                  onClick={() => createPreset('Top 4 GSIBs', ['JPM', 'BAC', 'C', 'WFC'])}
+                  className="px-3 py-2 text-xs text-gray-300 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Top 4 GSIBs
+                </button>
+                <button
+                  onClick={() => createPreset('Custody Banks', ['BK', 'STT'])}
+                  className="px-3 py-2 text-xs text-gray-300 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Custody Banks
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs text-gray-500 mb-2">Category II — Super-Regionals (8 banks)</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => createPreset('Category II — All Super-Regionals', ['USB', 'PNC', 'TFC', 'COF', 'TD', 'FITB', 'BMO', 'CFG'])}
+                  className="px-3 py-2 text-xs text-gray-300 bg-purple-600/20 border border-purple-500/50 rounded-lg hover:bg-purple-600/30 transition-colors"
+                >
+                  All Category II (8)
+                </button>
+                <button
+                  onClick={() => createPreset('US Regional Top 4', ['USB', 'PNC', 'TFC', 'COF'])}
+                  className="px-3 py-2 text-xs text-gray-300 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  US Regional Top 4
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs text-gray-500 mb-2">Category III — Regional (7 banks)</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => createPreset('Category III — All Regional', ['MTB', 'KEY', 'HBAN', 'RF', 'ALLY', 'AXP', 'DFS'])}
+                  className="px-3 py-2 text-xs text-gray-300 bg-green-600/20 border border-green-500/50 rounded-lg hover:bg-green-600/30 transition-colors"
+                >
+                  All Category III (7)
+                </button>
+                <button
+                  onClick={() => createPreset('Credit Card Specialists', ['AXP', 'DFS', 'COF'])}
+                  className="px-3 py-2 text-xs text-gray-300 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Credit Card Specialists
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
