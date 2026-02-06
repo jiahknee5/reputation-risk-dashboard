@@ -17,31 +17,70 @@ interface DataSource {
   recordCount?: number
   updateFrequency: string
   cost: 'free' | 'paid'
+  price: string
   apiUrl?: string
 }
 
 const INITIAL_SOURCES: DataSource[] = [
-  // Regulatory Sources
-  { id: 'cfpb', name: 'CFPB Consumer Complaints', category: 'regulatory', description: 'Consumer complaint database with product categories and company responses', icon: MessageSquare, enabled: true, status: 'active', lastSync: '2h ago', recordCount: 12847, updateFrequency: 'Daily', cost: 'free', apiUrl: 'https://www.consumerfinance.gov/data-research/consumer-complaints/' },
-  { id: 'sec', name: 'SEC EDGAR Filings', category: 'regulatory', description: '10-K, 10-Q, 8-K filings with risk factor extraction', icon: FileText, enabled: true, status: 'active', lastSync: '6h ago', recordCount: 342, updateFrequency: 'Daily', cost: 'free', apiUrl: 'https://www.sec.gov/edgar/' },
-  { id: 'occ', name: 'OCC Enforcement', category: 'regulatory', description: 'Consent orders, cease & desist, civil money penalties', icon: Shield, enabled: true, status: 'active', lastSync: '1d ago', recordCount: 89, updateFrequency: 'Weekly', cost: 'free', apiUrl: 'https://www.occ.gov/' },
-  { id: 'fdic', name: 'FDIC Actions & Failures', category: 'regulatory', description: 'Enforcement actions and bank failure data', icon: Building2, enabled: true, status: 'active', lastSync: '1d ago', recordCount: 156, updateFrequency: 'Weekly', cost: 'free', apiUrl: 'https://www.fdic.gov/' },
-  { id: 'fed', name: 'Federal Reserve', category: 'regulatory', description: 'Fed enforcement actions and press releases', icon: Scale, enabled: true, status: 'active', lastSync: '2d ago', recordCount: 67, updateFrequency: 'Weekly', cost: 'free', apiUrl: 'https://www.federalreserve.gov/' },
-  { id: 'doj', name: 'DOJ Settlements', category: 'regulatory', description: 'Bank settlements, indictments, criminal pleas', icon: Scale, enabled: true, status: 'active', lastSync: '3d ago', recordCount: 23, updateFrequency: 'Weekly', cost: 'free', apiUrl: 'https://www.justice.gov/' },
-  { id: 'finra', name: 'FINRA Disciplinary', category: 'regulatory', description: 'Broker-dealer disciplinary actions', icon: AlertTriangle, enabled: true, status: 'active', lastSync: '1w ago', recordCount: 412, updateFrequency: 'Monthly', cost: 'free', apiUrl: 'https://www.finra.org/' },
-  // News
-  { id: 'gdelt', name: 'GDELT Global News', category: 'news', description: '150K+ sources, 30 languages, tone analysis', icon: Globe, enabled: true, status: 'active', lastSync: '1h ago', recordCount: 8934, updateFrequency: 'Real-time', cost: 'free', apiUrl: 'https://www.gdeltproject.org/' },
-  { id: 'newsapi', name: 'NewsAPI', category: 'news', description: 'Premium news aggregation, full article text', icon: Newspaper, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid', apiUrl: 'https://newsapi.org/' },
-  // Social
-  { id: 'reddit', name: 'Reddit Sentiment', category: 'social', description: 'r/personalfinance, r/banking customer sentiment', icon: MessageSquare, enabled: true, status: 'active', lastSync: '30m ago', recordCount: 2341, updateFrequency: 'Hourly', cost: 'free', apiUrl: 'https://www.reddit.com/' },
-  { id: 'twitter', name: 'Twitter/X', category: 'social', description: 'Real-time mentions and viral complaints', icon: MessageSquare, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid', apiUrl: 'https://developer.twitter.com/' },
-  { id: 'glassdoor', name: 'Glassdoor Reviews', category: 'social', description: 'Employee sentiment and culture signals', icon: Building2, enabled: false, status: 'inactive', updateFrequency: 'Weekly', cost: 'free' },
-  // Market
-  { id: 'trends', name: 'Google Trends', category: 'market', description: 'Search interest spikes and crisis keywords', icon: TrendingUp, enabled: true, status: 'active', lastSync: '4h ago', recordCount: 156, updateFrequency: 'Daily', cost: 'free', apiUrl: 'https://trends.google.com/' },
-  { id: 'yahoo', name: 'Yahoo Finance', category: 'market', description: 'Stock prices, volume, volatility metrics', icon: TrendingUp, enabled: true, status: 'active', lastSync: '15m ago', recordCount: 2890, updateFrequency: 'Daily', cost: 'free', apiUrl: 'https://finance.yahoo.com/' },
-  // Premium
-  { id: 'refinitiv', name: 'Refinitiv', category: 'premium', description: 'Enterprise ESG scores and controversy screening', icon: Database, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid' },
-  { id: 'bloomberg', name: 'Bloomberg B-PIPE', category: 'premium', description: 'Real-time news, filings, market data', icon: Zap, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid' },
+  // ============ REGULATORY SOURCES (Federal) ============
+  { id: 'cfpb', name: 'CFPB Consumer Complaints', category: 'regulatory', description: 'Consumer complaint database with product categories and company responses', icon: MessageSquare, enabled: true, status: 'active', lastSync: '2h ago', recordCount: 12847, updateFrequency: 'Daily', cost: 'free', price: 'Free', apiUrl: 'https://www.consumerfinance.gov/data-research/consumer-complaints/' },
+  { id: 'sec', name: 'SEC EDGAR Filings', category: 'regulatory', description: '10-K, 10-Q, 8-K filings with risk factor extraction', icon: FileText, enabled: true, status: 'active', lastSync: '6h ago', recordCount: 342, updateFrequency: 'Daily', cost: 'free', price: 'Free', apiUrl: 'https://www.sec.gov/edgar/' },
+  { id: 'occ', name: 'OCC Enforcement', category: 'regulatory', description: 'Consent orders, cease & desist, civil money penalties', icon: Shield, enabled: true, status: 'active', lastSync: '1d ago', recordCount: 89, updateFrequency: 'Weekly', cost: 'free', price: 'Free', apiUrl: 'https://www.occ.gov/' },
+  { id: 'fdic', name: 'FDIC Actions & Failures', category: 'regulatory', description: 'Enforcement actions and bank failure data', icon: Building2, enabled: true, status: 'active', lastSync: '1d ago', recordCount: 156, updateFrequency: 'Weekly', cost: 'free', price: 'Free', apiUrl: 'https://www.fdic.gov/' },
+  { id: 'fed', name: 'Federal Reserve', category: 'regulatory', description: 'Fed enforcement actions and press releases', icon: Scale, enabled: true, status: 'active', lastSync: '2d ago', recordCount: 67, updateFrequency: 'Weekly', cost: 'free', price: 'Free', apiUrl: 'https://www.federalreserve.gov/' },
+  { id: 'doj', name: 'DOJ Settlements', category: 'regulatory', description: 'Bank settlements, indictments, criminal pleas', icon: Scale, enabled: true, status: 'active', lastSync: '3d ago', recordCount: 23, updateFrequency: 'Weekly', cost: 'free', price: 'Free', apiUrl: 'https://www.justice.gov/' },
+  { id: 'finra', name: 'FINRA Disciplinary', category: 'regulatory', description: 'Broker-dealer disciplinary actions', icon: AlertTriangle, enabled: true, status: 'active', lastSync: '1w ago', recordCount: 412, updateFrequency: 'Monthly', cost: 'free', price: 'Free', apiUrl: 'https://www.finra.org/' },
+  { id: 'fincen', name: 'FinCEN Enforcement', category: 'regulatory', description: 'BSA/AML enforcement, SAR statistics', icon: Shield, enabled: false, status: 'inactive', updateFrequency: 'Monthly', cost: 'free', price: 'Free' },
+  { id: 'ofac', name: 'OFAC Sanctions', category: 'regulatory', description: 'SDN list, sanctions violations, penalties', icon: AlertTriangle, enabled: false, status: 'inactive', updateFrequency: 'Daily', cost: 'free', price: 'Free' },
+  { id: 'ftc', name: 'FTC Consumer Protection', category: 'regulatory', description: 'Consumer fraud cases, data breach notifications', icon: Shield, enabled: false, status: 'inactive', updateFrequency: 'Weekly', cost: 'free', price: 'Free' },
+  { id: 'epa', name: 'EPA Enforcement', category: 'regulatory', description: 'Environmental violations, Superfund sites', icon: Building2, enabled: false, status: 'inactive', updateFrequency: 'Monthly', cost: 'free', price: 'Free' },
+  { id: 'osha', name: 'OSHA Violations', category: 'regulatory', description: 'Workplace safety violations, fatalities', icon: AlertTriangle, enabled: false, status: 'inactive', updateFrequency: 'Weekly', cost: 'free', price: 'Free' },
+
+  // ============ STATE REGULATORY ============
+  { id: 'dfs-ny', name: 'NY DFS', category: 'regulatory', description: 'NY banking enforcement, consent orders', icon: Building2, enabled: false, status: 'inactive', updateFrequency: 'Monthly', cost: 'free', price: 'Free' },
+  { id: 'dfpi-ca', name: 'CA DFPI', category: 'regulatory', description: 'CA banking/lending enforcement', icon: Scale, enabled: false, status: 'inactive', updateFrequency: 'Monthly', cost: 'free', price: 'Free' },
+
+  // ============ NEWS & MEDIA MONITORING ============
+  { id: 'gdelt', name: 'GDELT Global News', category: 'news', description: '150K+ sources, 30 languages, tone analysis', icon: Globe, enabled: true, status: 'active', lastSync: '1h ago', recordCount: 8934, updateFrequency: 'Real-time', cost: 'free', price: 'Free', apiUrl: 'https://www.gdeltproject.org/' },
+  { id: 'newsapi', name: 'NewsAPI', category: 'news', description: 'Premium news aggregation, full article text', icon: Newspaper, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid', price: '$449/mo', apiUrl: 'https://newsapi.org/' },
+  { id: 'factiva', name: 'Factiva (Dow Jones)', category: 'news', description: 'Premium news archive, 33K+ sources, 200 years', icon: Newspaper, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid', price: '$2,500/mo' },
+  { id: 'lexisnexis', name: 'LexisNexis', category: 'news', description: 'Legal news, litigation tracking, regulatory filings', icon: FileText, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid', price: '$3,000/mo' },
+  { id: 'meltwater', name: 'Meltwater', category: 'news', description: 'Media monitoring, sentiment analysis, alerts', icon: Globe, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid', price: '$9K-30K/yr' },
+  { id: 'brandwatch', name: 'Brandwatch', category: 'news', description: 'Social listening, brand monitoring, crisis alerts', icon: TrendingUp, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid', price: '$12K-48K/yr' },
+  { id: 'cision', name: 'Cision', category: 'news', description: 'PR monitoring, media database, influencer tracking', icon: Newspaper, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid', price: '$10K/yr' },
+
+  // ============ SOCIAL MEDIA ============
+  { id: 'reddit', name: 'Reddit Sentiment', category: 'social', description: 'r/personalfinance, r/banking customer sentiment', icon: MessageSquare, enabled: true, status: 'active', lastSync: '30m ago', recordCount: 2341, updateFrequency: 'Hourly', cost: 'free', price: 'Free', apiUrl: 'https://www.reddit.com/' },
+  { id: 'twitter', name: 'Twitter/X API', category: 'social', description: 'Real-time mentions and viral complaints', icon: MessageSquare, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid', price: '$5,000/mo', apiUrl: 'https://developer.twitter.com/' },
+  { id: 'glassdoor', name: 'Glassdoor Reviews', category: 'social', description: 'Employee sentiment and culture signals', icon: Building2, enabled: false, status: 'inactive', updateFrequency: 'Weekly', cost: 'free', price: 'Scraping only' },
+  { id: 'trustpilot', name: 'Trustpilot', category: 'social', description: 'Customer reviews and business ratings', icon: MessageSquare, enabled: false, status: 'premium', updateFrequency: 'Daily', cost: 'paid', price: '$299/mo' },
+  { id: 'yelp', name: 'Yelp Reviews', category: 'social', description: 'Business reviews, customer complaints', icon: MessageSquare, enabled: false, status: 'inactive', updateFrequency: 'Daily', cost: 'free', price: 'Scraping only' },
+  { id: 'linkedin', name: 'LinkedIn', category: 'social', description: 'Company pages, employee posts, executive changes', icon: Building2, enabled: false, status: 'inactive', updateFrequency: 'Daily', cost: 'free', price: 'Scraping only' },
+  { id: 'facebook', name: 'Facebook/Instagram', category: 'social', description: 'Brand pages, customer sentiment, crisis signals', icon: MessageSquare, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid', price: '$1,000/mo' },
+  { id: 'tiktok', name: 'TikTok', category: 'social', description: 'Viral videos, brand mentions, Gen-Z sentiment', icon: TrendingUp, enabled: false, status: 'inactive', updateFrequency: 'Daily', cost: 'free', price: 'Scraping only' },
+  { id: 'youtube', name: 'YouTube', category: 'social', description: 'Video content, comments, brand channels', icon: MessageSquare, enabled: false, status: 'inactive', updateFrequency: 'Daily', cost: 'free', price: 'Scraping only' },
+
+  // ============ MARKET & FINANCIAL DATA ============
+  { id: 'trends', name: 'Google Trends', category: 'market', description: 'Search interest spikes and crisis keywords', icon: TrendingUp, enabled: true, status: 'active', lastSync: '4h ago', recordCount: 156, updateFrequency: 'Daily', cost: 'free', price: 'Free', apiUrl: 'https://trends.google.com/' },
+  { id: 'yahoo', name: 'Yahoo Finance', category: 'market', description: 'Stock prices, volume, volatility metrics', icon: TrendingUp, enabled: true, status: 'active', lastSync: '15m ago', recordCount: 2890, updateFrequency: 'Daily', cost: 'free', price: 'Free', apiUrl: 'https://finance.yahoo.com/' },
+  { id: 'alpha-vantage', name: 'Alpha Vantage', category: 'market', description: 'Stock data, technical indicators, fundamentals', icon: TrendingUp, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid', price: '$49/mo' },
+  { id: 'polygon', name: 'Polygon.io', category: 'market', description: 'Real-time stock/options data, Level 2 quotes', icon: Zap, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid', price: '$199/mo' },
+
+  // ============ LITIGATION & LEGAL ============
+  { id: 'pacer', name: 'PACER Federal Courts', category: 'regulatory', description: 'Federal court filings, lawsuits, settlements', icon: Scale, enabled: false, status: 'inactive', updateFrequency: 'Daily', cost: 'free', price: '$0.10/page' },
+  { id: 'justia', name: 'Justia Dockets', category: 'regulatory', description: 'Free federal dockets, case law search', icon: FileText, enabled: false, status: 'inactive', updateFrequency: 'Daily', cost: 'free', price: 'Free' },
+  { id: 'law360', name: 'Law360', category: 'news', description: 'Legal news, litigation tracking, expert analysis', icon: Scale, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid', price: '$1,500/yr' },
+  { id: 'bloomberglaw', name: 'Bloomberg Law', category: 'news', description: 'Legal research, dockets, litigation analytics', icon: Zap, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid', price: '$4,200/yr' },
+
+  // ============ PREMIUM ESG & REPUTATION ============
+  { id: 'refinitiv', name: 'Refinitiv ESG', category: 'premium', description: 'Enterprise ESG scores and controversy screening', icon: Database, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid', price: '$50K+/yr' },
+  { id: 'bloomberg', name: 'Bloomberg B-PIPE', category: 'premium', description: 'Real-time news, filings, market data', icon: Zap, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid', price: '$24K/yr' },
+  { id: 'reprisk', name: 'RepRisk Platform', category: 'premium', description: 'ESG risk screening, 34 risk factors, 23 languages', icon: Shield, enabled: false, status: 'premium', updateFrequency: 'Daily', cost: 'paid', price: '$50-200K/yr' },
+  { id: 'msci-esg', name: 'MSCI ESG Manager', category: 'premium', description: 'ESG ratings, carbon data, climate risk', icon: Database, enabled: false, status: 'premium', updateFrequency: 'Monthly', cost: 'paid', price: '$100K+/yr' },
+  { id: 'sustainalytics', name: 'Sustainalytics', category: 'premium', description: 'ESG risk ratings, controversy tracking', icon: AlertTriangle, enabled: false, status: 'premium', updateFrequency: 'Monthly', cost: 'paid', price: '$75K+/yr' },
+  { id: 'sp-global-esg', name: 'S&P Global ESG Scores', category: 'premium', description: 'CSA scores, SAM methodology, climate data', icon: TrendingUp, enabled: false, status: 'premium', updateFrequency: 'Annual', cost: 'paid', price: '$50K+/yr' },
+  { id: 'truvalue-labs', name: 'TruValue Labs (FactSet)', category: 'premium', description: 'AI-powered ESG insights, sentiment analysis', icon: Zap, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid', price: '$25K/yr' },
+  { id: 'dow-jones-rc', name: 'Dow Jones Risk & Compliance', category: 'premium', description: 'Third-party risk, sanctions screening, PEP lists', icon: Shield, enabled: false, status: 'premium', updateFrequency: 'Real-time', cost: 'paid', price: '$10-50K/yr' },
 ]
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -165,6 +204,7 @@ export default function DataSources() {
               <th className="text-left py-2.5 px-3 text-gray-400 font-medium">Source</th>
               <th className="text-left py-2.5 px-3 text-gray-400 font-medium hidden md:table-cell">Description</th>
               <th className="text-left py-2.5 px-3 text-gray-400 font-medium w-20">Category</th>
+              <th className="text-right py-2.5 px-3 text-gray-400 font-medium w-24">Price</th>
               <th className="text-left py-2.5 px-3 text-gray-400 font-medium w-20">Frequency</th>
               <th className="text-right py-2.5 px-3 text-gray-400 font-medium w-20">Records</th>
               <th className="text-left py-2.5 px-3 text-gray-400 font-medium w-20">Last Sync</th>
@@ -218,7 +258,14 @@ export default function DataSources() {
                       {source.category}
                     </span>
                   </td>
-                  
+
+                  {/* Price */}
+                  <td className="py-2 px-3 text-right">
+                    <span className={`text-sm font-medium ${source.cost === 'free' ? 'text-green-400' : 'text-orange-400'}`}>
+                      {source.price}
+                    </span>
+                  </td>
+
                   {/* Frequency */}
                   <td className="py-2 px-3 text-gray-400">
                     {source.updateFrequency}
