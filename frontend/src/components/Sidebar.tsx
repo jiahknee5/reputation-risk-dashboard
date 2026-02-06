@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Activity, Shield, Users, BarChart3, AlertTriangle, FileText, Gauge, MessageSquare, Bot } from 'lucide-react'
+import { LayoutDashboard, Activity, Shield, Users, BarChart3, AlertTriangle, FileText, Gauge, MessageSquare, Bot, Database } from 'lucide-react'
 
 const navItems = [
   { to: '/', label: 'Executive Dashboard', icon: LayoutDashboard },
@@ -10,8 +10,9 @@ const navItems = [
   { to: '/crisis', label: 'Crisis Simulation', icon: AlertTriangle },
   { to: '/stakeholders', label: 'Stakeholder Impact', icon: BarChart3 },
   { to: '/reports', label: 'Board Reports', icon: FileText },
-  { to: '/feedback', label: 'Developer Feedback', icon: MessageSquare },
+  { to: '/data-sources', label: 'Data Sources', icon: Database },
   { to: '/chat', label: 'Ask Risk Analyst', icon: Bot },
+  { to: '/feedback', label: 'Developer Feedback', icon: MessageSquare },
 ]
 
 export default function Sidebar() {

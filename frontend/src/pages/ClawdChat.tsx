@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Send, Bot, User, Trash2, Sparkles, Loader2 } from 'lucide-react'
+import { Send, Bot, User, Trash2, Sparkles, Loader2, Plus, History, ChevronDown, X } from 'lucide-react'
 import {
   getDashboardOverview, getRiskDetail, getPeerBenchmarking,
   getRegulatoryIntel, getCrisisSimulation, getStakeholderImpact,
@@ -11,32 +11,68 @@ const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_KEY || ''
 interface Message {
   role: 'user' | 'assistant'
   content: string
+  timestamp?: number
 }
 
-const BASE_SYSTEM_PROMPT = `You are the Risk Analyst, an AI assistant embedded in a Reputation Risk Intelligence Platform for banking institutions.
+interface ChatSession {
+  id: string
+  name: string
+  messages: Message[]
+  createdAt: number
+  updatedAt: number
+}
 
-## Your Expertise
-- Reputation risk scoring methodology (composite scores 0-100)
-- CFPB consumer complaint analysis
-- FinBERT NLP sentiment analysis on financial news
-- SEC filing risk keyword extraction
-- Banking regulatory frameworks (Basel, OCC, FDIC enforcement actions)
-- ESG risk mapping from complaint categories
-- Peer benchmarking across US banks
-- Crisis simulation and Monte Carlo projections
-- Stakeholder impact analysis
+const STORAGE_KEY = 'reprisk-chat-sessions'
+const CURRENT_SESSION_KEY = 'reprisk-current-session'
 
-## Scoring Methodology
-Composite Score = Media Sentiment (25%) + Regulatory Risk (25%) + Consumer Complaints (20%) + Market Signal (15%) + Peer Relative (15%)
-Scale: 0 = lowest risk, 100 = highest risk
-Thresholds: <30 = Low (green), 30-50 = Moderate (yellow), 50-70 = Elevated (orange), >70 = High (red)
+function generateSessionId(): string {
+  return `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+}
 
-## Instructions
-- Reference the LIVE DATA below when answering questions — cite specific numbers
-- Keep responses concise, data-driven, and actionable
-- When comparing banks, use the actual scores from the data
-- Format with markdown for readability
-- If asked about something not in the data, say so clearly`
+function loadSessions(): ChatSession[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    return stored ? JSON.parse(stored) : []
+  } catch {
+    return []
+  }
+}
+
+function saveSessions(sessions: ChatSession[]): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions))
+}
+
+function getCurrentSessionId(): string | null {
+  return localStorage.getItem(CURRENT_SESSION_KEY)
+}
+
+function setCurrentSessionId(id: string): void {
+  localStorage.setItem(CURRENT_SESSION_KEY, id)
+}
+
+const BASE_SYSTEM_PROMPT = `You are a Risk Analyst for a Reputation Risk Intelligence Platform.
+
+## Scoring
+Composite = Media (25%) + Regulatory (25%) + Complaints (20%) + Market (15%) + Peer (15%)
+Scale: 0-100. <30=Low, 30-50=Moderate, 50-70=Elevated, >70=High
+
+## Response Style
+- **Be concise.** Use bullet points, not paragraphs. Get to the point fast.
+- **Cite sources.** Every claim must have a bracketed source tag, e.g. [CFPB], [SEC 10-K], [FinBERT], [OCC], [FDIC]
+- **Use numbers.** "WFC score: 67 [Dashboard]" not "Wells Fargo has elevated risk"
+- **Format for scanning.** Headers, bullets, bold key terms. No walls of text.
+- **Max 150 words** unless user asks for detail.
+
+## Source Tags (use these)
+- [CFPB] — Consumer complaint data
+- [SEC] — SEC filings, 10-K risk factors
+- [FinBERT] — NLP sentiment from news/filings
+- [OCC/FDIC/Fed] — Enforcement actions, consent orders
+- [Dashboard] — Platform composite scores
+- [Monte Carlo] — Crisis simulation projections
+- [Peer Benchmark] — Relative to peer group avg
+
+If data isn't available, say "[No data]" — don't guess.`
 
 function buildDataContext(
   overview: DashboardOverview[],
@@ -50,139 +86,229 @@ function buildDataContext(
 ): string {
   const today = new Date().toISOString().slice(0, 10)
 
-  let ctx = `\n\n## LIVE DASHBOARD DATA (as of ${today})\n\n`
+  let ctx = `\n\n## DATA (${today})\n\n`
 
-  // Overview scores
-  ctx += `### Current Composite Risk Scores (ranked highest to lowest)\n`
-  ctx += `| Bank | Ticker | Composite | Media | Complaints | Market | Regulatory | Peer Rel. | Data Source |\n`
-  ctx += `|------|--------|-----------|-------|------------|--------|------------|-----------|-------------|\n`
+  // Compact scores table
+  ctx += `### Scores [Dashboard]\n`
+  ctx += `Ticker|Composite|Media|Complaints|Market|Regulatory|vs Peer\n`
   for (const b of overview) {
-    ctx += `| ${b.bank.name} | ${b.bank.ticker} | ${Math.round(b.composite_score)} | ${Math.round(b.media_sentiment_score)} | ${Math.round(b.complaint_score)} | ${Math.round(b.market_score)} | ${Math.round(b.regulatory_score)} | ${Math.round(b.top_drivers.find(d => d.name === 'Peer Relative')?.score ?? 0)} | ${b.data_source} |\n`
+    const peerDev = peerData.banks.find(p => p.bank.ticker === b.bank.ticker)?.deviation_from_peer ?? 0
+    ctx += `${b.bank.ticker}|${Math.round(b.composite_score)}|${Math.round(b.media_sentiment_score)}|${Math.round(b.complaint_score)}|${Math.round(b.market_score)}|${Math.round(b.regulatory_score)}|${peerDev > 0 ? '+' : ''}${peerDev}\n`
   }
 
-  // ESG flags
+  // ESG flags - compact
   const banksWithESG = overview.filter(b => b.esg_flags.length > 0)
   if (banksWithESG.length > 0) {
-    ctx += `\n### ESG Risk Flags\n`
+    ctx += `\n### ESG Flags [CFPB]\n`
     for (const b of banksWithESG) {
-      ctx += `- **${b.bank.name}**: ${b.esg_flags.map(f => `${f.theme === 'S' ? 'Social' : f.theme === 'G' ? 'Governance' : 'Environmental'} (${f.count} complaints)`).join(', ')}\n`
+      ctx += `${b.bank.ticker}: ${b.esg_flags.map(f => `${f.theme}(${f.count})`).join(', ')}\n`
     }
   }
 
-  // Top drivers per bank
-  ctx += `\n### Top Risk Drivers by Bank\n`
+  // Top drivers - compact
+  ctx += `\n### Risk Drivers [Dashboard]\n`
   for (const b of overview) {
-    ctx += `- **${b.bank.ticker}**: ${b.top_drivers.map(d => `${d.name} (${Math.round(d.score)})`).join(', ')}\n`
+    ctx += `${b.bank.ticker}: ${b.top_drivers.slice(0, 3).map(d => `${d.name}=${Math.round(d.score)}`).join(', ')}\n`
   }
 
-  // Peer benchmarking
-  ctx += `\n### Peer Benchmarking\n`
-  ctx += `- Peer Group Average: ${peerData.peer_average}\n`
-  ctx += `- Component Averages: Media ${peerData.component_averages.media_sentiment}, Complaints ${peerData.component_averages.complaints}, Market ${peerData.component_averages.market}\n`
-  ctx += `- Deviations from peer: ${peerData.banks.map(b => `${b.bank.ticker} ${b.deviation_from_peer > 0 ? '+' : ''}${b.deviation_from_peer}`).join(', ')}\n`
+  // Peer benchmarking - compact
+  ctx += `\n### Peer Avg [Peer Benchmark]\n`
+  ctx += `Group avg: ${peerData.peer_average} | Media: ${peerData.component_averages.media_sentiment} | Complaints: ${peerData.component_averages.complaints} | Market: ${peerData.component_averages.market}\n`
 
-  // Risk detail components
-  ctx += `\n### Detailed Risk Components (5-factor breakdown)\n`
-  for (const [bankId, detail] of Object.entries(riskDetails)) {
-    ctx += `\n**${detail.bank.name} (${detail.bank.ticker})** — Composite: ${Math.round(detail.composite_score)}\n`
-    for (const c of detail.components) {
-      ctx += `  - ${c.name}: ${Math.round(c.score)} (weight: ${(c.weight * 100)}%) — ${c.description}\n`
-    }
+  // Risk details - compact with alerts
+  ctx += `\n### Alerts [Dashboard]\n`
+  for (const [, detail] of Object.entries(riskDetails)) {
     if (detail.alerts.length > 0) {
-      ctx += `  Active Alerts:\n`
       for (const a of detail.alerts) {
-        ctx += `  - [${a.severity.toUpperCase()}] ${a.message} (${a.date})\n`
+        ctx += `${detail.bank.ticker} [${a.severity.toUpperCase()}]: ${a.message} (${a.date})\n`
       }
     }
   }
 
-  // CFPB complaints
+  // CFPB complaints - compact
   if (complaints.length > 0) {
-    ctx += `\n### CFPB Complaint Summary (last 90 days)\n`
-    ctx += `Total complaint categories: ${complaints.length}\n`
-    for (const c of complaints.slice(0, 10)) {
-      ctx += `- ${c.product}: ${c.count} complaints\n`
-    }
+    ctx += `\n### Complaints [CFPB] (90d)\n`
+    ctx += complaints.slice(0, 8).map(c => `${c.product}: ${c.count}`).join(' | ') + '\n'
   }
 
-  // Regulatory intel
-  ctx += `\n### Regulatory Intelligence\n`
-  ctx += `- Total enforcement actions: ${regulatory.enforcementActions.length}\n`
-  ctx += `- High severity (4-5): ${regulatory.enforcementActions.filter(a => a.severity >= 4).length}\n`
+  // Regulatory intel - compact
+  ctx += `\n### Enforcement [OCC/FDIC/Fed]\n`
+  const highSev = regulatory.enforcementActions.filter(a => a.severity >= 4)
   const totalPenalties = regulatory.enforcementActions.reduce((s, a) => s + (a.penalty_amount || 0), 0)
-  ctx += `- Total penalties: $${(totalPenalties / 1_000_000).toFixed(0)}M\n`
-  ctx += `- SEC filings analyzed: ${regulatory.secFilings.length}\n`
-  ctx += `\nRecent enforcement actions:\n`
-  for (const a of regulatory.enforcementActions.slice(0, 5)) {
-    ctx += `- ${a.action_date}: ${a.bank.ticker} — ${a.agency} ${a.action_type}${a.penalty_amount ? ` ($${(a.penalty_amount / 1_000_000).toFixed(1)}M)` : ''} [severity: ${a.severity}/5]\n`
+  ctx += `Total: ${regulatory.enforcementActions.length} | High-sev: ${highSev.length} | Penalties: $${(totalPenalties / 1_000_000).toFixed(0)}M\n`
+  for (const a of regulatory.enforcementActions.slice(0, 4)) {
+    ctx += `${a.action_date} ${a.bank.ticker}: ${a.agency} ${a.action_type}${a.penalty_amount ? ` $${(a.penalty_amount / 1_000_000).toFixed(1)}M` : ''} (sev ${a.severity}/5)\n`
   }
 
-  // Crisis scenarios (for highest risk bank)
+  // SEC filings
+  ctx += `\n### SEC Filings [SEC]\n`
+  ctx += `Analyzed: ${regulatory.secFilings.length} filings\n`
+
+  // Crisis scenarios - compact
   if (overview.length > 0) {
     const topBankId = overview[0].bank.id
     const crisis = crisisData[topBankId]
     if (crisis) {
-      ctx += `\n### Crisis Scenarios for ${crisis.bank.name} (highest risk)\n`
+      ctx += `\n### Crisis Sim [Monte Carlo] — ${crisis.bank.ticker}\n`
       for (const s of crisis.scenarios) {
-        ctx += `- **${s.name}**: probability ${(s.probability * 100)}%, projected score ${s.projected_score}, recovery ${s.recovery_days} days, impact ${s.financial_impact}\n`
+        ctx += `${s.name}: ${(s.probability * 100)}% prob, score→${s.projected_score}, ${s.recovery_days}d recovery, ${s.financial_impact}\n`
       }
     }
   }
 
-  // Stakeholder impact
-  ctx += `\n### Stakeholder Impact Summary\n`
+  // Stakeholder impact - compact
+  ctx += `\n### Stakeholders [Dashboard]\n`
   for (const bankData of stakeholders) {
-    ctx += `**${bankData.bank.ticker}**: `
-    ctx += bankData.stakeholders.map(s => `${s.group}=${s.impact_level}`).join(', ')
-    ctx += '\n'
+    ctx += `${bankData.bank.ticker}: ${bankData.stakeholders.map(s => `${s.group}=${s.impact_level}`).join(', ')}\n`
   }
 
-  // Board report summary
-  ctx += `\n### Board Report Executive Summary\n`
-  ctx += `Period: ${boardReport.period}\n`
-  ctx += boardReport.executive_summary + '\n'
-  ctx += `\nKey Findings:\n`
-  for (const f of boardReport.key_findings) {
-    ctx += `- ${f}\n`
-  }
-  ctx += `\nRecommendations:\n`
-  for (const r of boardReport.recommendations) {
-    ctx += `- [${r.priority}] ${r.action}\n`
-  }
+  // Board report - compact
+  ctx += `\n### Board Summary [Dashboard]\n`
+  ctx += `${boardReport.period}: ${boardReport.executive_summary.slice(0, 200)}...\n`
+  ctx += `Findings: ${boardReport.key_findings.slice(0, 3).join('; ')}\n`
+  ctx += `Actions: ${boardReport.recommendations.slice(0, 3).map(r => `[${r.priority}] ${r.action.slice(0, 50)}`).join('; ')}\n`
 
   return ctx
 }
 
 const SUGGESTED_PROMPTS = [
-  'Which bank has the highest risk right now and why?',
-  'Compare Wells Fargo vs JPMorgan — what are the key differences?',
-  'What CFPB complaint categories are driving the most risk?',
-  'What crisis scenarios should we prepare for?',
-  'Summarize the board report for me',
-  'Which banks have ESG risk flags?',
+  'Highest risk bank and top 3 drivers?',
+  'WFC vs JPM: key differences?',
+  'Top CFPB complaint categories?',
+  'Crisis scenarios for top-risk bank?',
+  'Board report summary',
+  'Banks with ESG flags?',
 ]
 
 function renderMarkdown(text: string) {
   return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    // Source tags - style as small colored badges
+    .replace(/\[(CFPB|SEC|FinBERT|OCC|FDIC|Fed|Dashboard|Monte Carlo|Peer Benchmark|No data)\]/g, 
+      '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-500/20 text-blue-300 ml-1">$1</span>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/`(.*?)`/g, '<code class="bg-gray-800 px-1 rounded text-sm">$1</code>')
-    .replace(/^### (.*$)/gm, '<h3 class="text-base font-semibold text-white mt-3 mb-1">$1</h3>')
-    .replace(/^## (.*$)/gm, '<h2 class="text-lg font-semibold text-white mt-3 mb-1">$1</h2>')
-    .replace(/^- (.*$)/gm, '<li class="ml-4 text-gray-300">• $1</li>')
-    .replace(/^\d+\. (.*$)/gm, '<li class="ml-4 text-gray-300">$1</li>')
-    .replace(/\n\n/g, '<br/><br/>')
+    .replace(/`(.*?)`/g, '<code class="bg-gray-800 px-1 rounded text-xs">$1</code>')
+    .replace(/^### (.*$)/gm, '<h3 class="text-sm font-semibold text-white mt-2 mb-1">$1</h3>')
+    .replace(/^## (.*$)/gm, '<h2 class="text-base font-semibold text-white mt-2 mb-1">$1</h2>')
+    .replace(/^- (.*$)/gm, '<li class="ml-3 text-gray-300 text-sm">• $1</li>')
+    .replace(/^\d+\. (.*$)/gm, '<li class="ml-3 text-gray-300 text-sm">$1</li>')
+    .replace(/\n\n/g, '<br/>')
     .replace(/\n/g, '<br/>')
 }
 
 export default function ClawdChat() {
+  const [sessions, setSessions] = useState<ChatSession[]>([])
+  const [currentSessionId, setCurrentSessionIdState] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [systemPrompt, setSystemPrompt] = useState<string | null>(null)
   const [dataLoading, setDataLoading] = useState(true)
+  const [showHistory, setShowHistory] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const historyRef = useRef<HTMLDivElement>(null)
+
+  // Load sessions from localStorage on mount
+  useEffect(() => {
+    const loadedSessions = loadSessions()
+    setSessions(loadedSessions)
+    
+    const savedCurrentId = getCurrentSessionId()
+    if (savedCurrentId && loadedSessions.find(s => s.id === savedCurrentId)) {
+      setCurrentSessionIdState(savedCurrentId)
+      const session = loadedSessions.find(s => s.id === savedCurrentId)
+      if (session) {
+        setMessages(session.messages)
+      }
+    }
+  }, [])
+
+  // Save messages to current session whenever they change
+  useEffect(() => {
+    if (!currentSessionId || messages.length === 0) return
+    
+    setSessions(prev => {
+      const updated = prev.map(s => 
+        s.id === currentSessionId 
+          ? { ...s, messages, updatedAt: Date.now(), name: s.name || getSessionName(messages) }
+          : s
+      )
+      saveSessions(updated)
+      return updated
+    })
+  }, [messages, currentSessionId])
+
+  // Close history dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (historyRef.current && !historyRef.current.contains(event.target as Node)) {
+        setShowHistory(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  function getSessionName(msgs: Message[]): string {
+    const firstUserMsg = msgs.find(m => m.role === 'user')
+    if (firstUserMsg) {
+      return firstUserMsg.content.slice(0, 40) + (firstUserMsg.content.length > 40 ? '...' : '')
+    }
+    return 'New conversation'
+  }
+
+  function startNewSession() {
+    const newSession: ChatSession = {
+      id: generateSessionId(),
+      name: 'New conversation',
+      messages: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    }
+    setSessions(prev => {
+      const updated = [newSession, ...prev]
+      saveSessions(updated)
+      return updated
+    })
+    setCurrentSessionIdState(newSession.id)
+    setCurrentSessionId(newSession.id)
+    setMessages([])
+    setShowHistory(false)
+  }
+
+  function switchToSession(sessionId: string) {
+    const session = sessions.find(s => s.id === sessionId)
+    if (session) {
+      setCurrentSessionIdState(sessionId)
+      setCurrentSessionId(sessionId)
+      setMessages(session.messages)
+    }
+    setShowHistory(false)
+  }
+
+  function deleteSession(sessionId: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    setSessions(prev => {
+      const updated = prev.filter(s => s.id !== sessionId)
+      saveSessions(updated)
+      return updated
+    })
+    if (currentSessionId === sessionId) {
+      setCurrentSessionIdState(null)
+      setMessages([])
+    }
+  }
+
+  function clearAllHistory() {
+    if (confirm('Delete all conversation history? This cannot be undone.')) {
+      setSessions([])
+      saveSessions([])
+      setCurrentSessionIdState(null)
+      setMessages([])
+      setShowHistory(false)
+    }
+  }
 
   // Load all app data into system prompt on mount
   useEffect(() => {
@@ -238,7 +364,27 @@ export default function ClawdChat() {
       return
     }
 
-    const userMessage: Message = { role: 'user', content: content.trim() }
+    // Create a new session if we don't have one
+    let activeSessionId = currentSessionId
+    if (!activeSessionId) {
+      const newSession: ChatSession = {
+        id: generateSessionId(),
+        name: content.slice(0, 40) + (content.length > 40 ? '...' : ''),
+        messages: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      }
+      setSessions(prev => {
+        const updated = [newSession, ...prev]
+        saveSessions(updated)
+        return updated
+      })
+      activeSessionId = newSession.id
+      setCurrentSessionIdState(newSession.id)
+      setCurrentSessionId(newSession.id)
+    }
+
+    const userMessage: Message = { role: 'user', content: content.trim(), timestamp: Date.now() }
     const newMessages = [...messages, userMessage]
     setMessages(newMessages)
     setInput('')
@@ -269,13 +415,13 @@ export default function ClawdChat() {
 
       const data = await resp.json()
       const assistantContent = data.content?.[0]?.text || 'No response'
-      setMessages([...newMessages, { role: 'assistant', content: assistantContent }])
+      setMessages([...newMessages, { role: 'assistant', content: assistantContent, timestamp: Date.now() }])
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to get response')
     } finally {
       setLoading(false)
     }
-  }, [messages, systemPrompt])
+  }, [messages, systemPrompt, currentSessionId])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -297,15 +443,79 @@ export default function ClawdChat() {
             }
           </p>
         </div>
-        {messages.length > 0 && (
+        <div className="flex items-center gap-2">
+          {/* History dropdown */}
+          <div className="relative" ref={historyRef}>
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-gray-200 bg-gray-800 border border-gray-700 rounded-lg transition-colors"
+            >
+              <History size={14} />
+              History
+              {sessions.length > 0 && (
+                <span className="bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded-full">
+                  {sessions.length}
+                </span>
+              )}
+              <ChevronDown size={14} className={`transition-transform ${showHistory ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {showHistory && (
+              <div className="absolute right-0 top-full mt-2 w-80 bg-gray-900 border border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                <div className="p-3 border-b border-gray-800 flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-300">Conversation History</span>
+                  {sessions.length > 0 && (
+                    <button
+                      onClick={clearAllHistory}
+                      className="text-xs text-red-400 hover:text-red-300"
+                    >
+                      Clear all
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {sessions.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500 text-sm">
+                      No conversations yet
+                    </div>
+                  ) : (
+                    sessions.map(session => (
+                      <div
+                        key={session.id}
+                        onClick={() => switchToSession(session.id)}
+                        className={`p-3 cursor-pointer hover:bg-gray-800 border-b border-gray-800 last:border-0 flex items-start justify-between group ${
+                          session.id === currentSessionId ? 'bg-gray-800/50' : ''
+                        }`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm text-gray-200 truncate">{session.name}</div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {session.messages.length} messages · {new Date(session.updatedAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e) => deleteSession(session.id, e)}
+                          className="p-1 text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* New chat button */}
           <button
-            onClick={() => setMessages([])}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-red-400 transition-colors"
+            onClick={startNewSession}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-200 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
           >
-            <Trash2 size={14} />
-            Clear
+            <Plus size={14} />
+            New Chat
           </button>
-        )}
+        </div>
       </div>
 
       {/* Chat area */}

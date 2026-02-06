@@ -11,6 +11,7 @@ import StakeholderImpact from './pages/StakeholderImpact'
 import BoardReports from './pages/BoardReports'
 import Feedback from './pages/Feedback'
 import ClawdChat from './pages/ClawdChat'
+import DataSources from './pages/DataSources'
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/reports" element={<BoardReports />} />
           <Route path="/feedback" element={<Feedback />} />
           <Route path="/chat" element={<ClawdChat />} />
+          <Route path="/data-sources" element={<DataSources />} />
         </Routes>
         <FeedbackButton />
       </main>

@@ -368,57 +368,72 @@ export async function getRiskHistory(bankId: number): Promise<ReturnType<typeof 
 }
 
 export async function getSignals(bankId?: number, limit = 100) {
+  // Always start with demo signals as baseline
+  const demoSignals = demo.getSignals(bankId, limit)
+  
   const banks = bankId ? [demo.getBanks().find(b => b.id === bankId)!] : demo.getBanks()
 
   try {
-    const allSignals: ReturnType<typeof demo.getSignals> = []
-    let id = 1
+    const liveSignals: ReturnType<typeof demo.getSignals> = []
+    let id = 10000 // Start high to avoid ID conflicts with demo
 
     for (const bank of banks) {
       if (!bank) continue
 
       // Real CFPB complaints as signals
-      const complaints = await fetchAllBankComplaints(bank.name, 30)
-      for (const c of complaints.slice(0, 15)) {
-        const sentiment = c.consumer_disputed === 'Yes' ? -0.6 : c.timely === 'Yes' ? 0.1 : -0.3
-        allSignals.push({
-          id: id++,
-          bank_id: bank.id,
-          source: 'cfpb',
-          title: `CFPB Complaint: ${c.product} — ${c.issue}`,
-          content: c.complaint_what_happened?.slice(0, 200) || `${c.product} complaint filed against ${bank.name}`,
-          url: null,
-          published_at: c.date_received ? `${c.date_received}T12:00:00Z` : null,
-          sentiment_score: sentiment,
-          sentiment_label: sentiment > 0.1 ? 'positive' : sentiment < -0.1 ? 'negative' : 'neutral',
-          is_anomaly: Math.abs(sentiment) > 0.85,
-        })
+      try {
+        const complaints = await fetchAllBankComplaints(bank.name, 30)
+        for (const c of complaints.slice(0, 10)) {
+          const sentiment = c.consumer_disputed === 'Yes' ? -0.6 : c.timely === 'Yes' ? 0.1 : -0.3
+          liveSignals.push({
+            id: id++,
+            bank_id: bank.id,
+            source: 'cfpb',
+            title: `CFPB Complaint: ${c.product} — ${c.issue}`,
+            content: c.complaint_what_happened?.slice(0, 200) || `${c.product} complaint filed against ${bank.name}`,
+            url: null,
+            published_at: c.date_received ? `${c.date_received}T12:00:00Z` : null,
+            sentiment_score: sentiment,
+            sentiment_label: sentiment > 0.1 ? 'positive' : sentiment < -0.1 ? 'negative' : 'neutral',
+            is_anomaly: Math.abs(sentiment) > 0.85,
+          })
+        }
+      } catch {
+        // Skip this bank's CFPB data on error
       }
 
-      // Real news articles as signals
-      const news = await fetchAllBankNews(bank.name, bank.ticker)
-      for (let j = 0; j < news.articles.length; j++) {
-        const article = news.articles[j]
-        const sent = news.sentimentScores[j] || { score: 0, label: 'neutral' }
-        allSignals.push({
-          id: id++,
-          bank_id: bank.id,
-          source: 'news',
-          title: article.title || 'Untitled',
-          content: article.description?.slice(0, 200) || null,
-          url: article.url || null,
-          published_at: article.publishedAt || null,
-          sentiment_score: sent.score,
-          sentiment_label: sent.label,
-          is_anomaly: Math.abs(sent.score) > 0.85,
-        })
+      // Real news articles as signals (only if NewsAPI key is set)
+      if (NEWSAPI_KEY) {
+        try {
+          const news = await fetchAllBankNews(bank.name, bank.ticker)
+          for (let j = 0; j < news.articles.length; j++) {
+            const article = news.articles[j]
+            const sent = news.sentimentScores[j] || { score: 0, label: 'neutral' }
+            liveSignals.push({
+              id: id++,
+              bank_id: bank.id,
+              source: 'news',
+              title: article.title || 'Untitled',
+              content: article.description?.slice(0, 200) || null,
+              url: article.url || null,
+              published_at: article.publishedAt || null,
+              sentiment_score: sent.score,
+              sentiment_label: sent.label,
+              is_anomaly: Math.abs(sent.score) > 0.85,
+            })
+          }
+        } catch {
+          // Skip news on error
+        }
       }
     }
 
+    // Merge live signals with demo, prioritize live data
+    const allSignals = [...liveSignals, ...demoSignals]
     allSignals.sort((a, b) => (b.published_at || '').localeCompare(a.published_at || ''))
     return allSignals.slice(0, limit)
   } catch {
-    return demo.getSignals(bankId, limit)
+    return demoSignals
   }
 }
 
