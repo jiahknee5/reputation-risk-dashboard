@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect } from 'react'
 import RiskGauge from '../components/RiskGauge'
 import PageObjective from '../components/PageObjective'
 import InsightBox from '../components/InsightBox'
+import SectionObjective from '../components/SectionObjective'
+import ComponentDrilldown from '../components/ComponentDrilldown'
 import { getBanks, getRiskDetail } from '../services/api'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -59,6 +61,7 @@ export default function RiskDetail() {
 
   const [selectedBank, setSelectedBank] = useState(banks[0]?.id || allBanks[0]?.id)
   const detail = useMemo(() => getRiskDetail(selectedBank), [selectedBank])
+  const [drilldownComponent, setDrilldownComponent] = useState<string | null>(null)
 
   // Generate dynamic insight
   const insight = useMemo(() => {
@@ -153,6 +156,12 @@ export default function RiskDetail() {
 
       {insight && <InsightBox {...insight} />}
 
+      <SectionObjective
+        title="Component Attribution"
+        objective="Weighted component breakdown identifies the primary drivers of composite risk. Highest-weighted components (Media 25%, Regulatory 25%) have the greatest impact on overall score."
+        type={detail.composite_score >= 70 ? 'action' : 'info'}
+      />
+
       {/* Score overview */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col items-center justify-center">
@@ -163,32 +172,46 @@ export default function RiskDetail() {
           <h3 className="text-sm font-medium text-gray-400 mb-4">Risk Component Breakdown</h3>
           <div className="space-y-4">
             {detail.components.map((c) => (
-              <div key={c.name}>
+              <div key={c.name} className="group cursor-pointer" onClick={() => setDrilldownComponent(c.name)}>
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-gray-200">{c.name}</span>
+                    <span className="text-sm font-medium text-gray-200 group-hover:text-blue-400 transition-colors">
+                      {c.name}
+                    </span>
                     <span className="text-xs text-gray-500">Weight: {(c.weight * 100).toFixed(0)}%</span>
+                    <span className="text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                      → View Details
+                    </span>
                   </div>
                   <span className={`text-sm font-bold ${
                     c.score < 30 ? 'text-green-400' : c.score < 50 ? 'text-yellow-400' : c.score < 70 ? 'text-orange-400' : 'text-red-400'
                   }`}>{Math.round(c.score)}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="flex-1 bg-gray-800 rounded-full h-3">
+                  <div className="flex-1 bg-gray-800 rounded-full h-3 group-hover:bg-gray-700 transition-colors">
                     <div
-                      className={`h-3 rounded-full ${
-                        c.score < 30 ? 'bg-green-500' : c.score < 50 ? 'bg-yellow-500' : c.score < 70 ? 'bg-orange-500' : 'bg-red-500'
+                      className={`h-3 rounded-full transition-all ${
+                        c.score < 30 ? 'bg-green-500 group-hover:bg-green-400' :
+                        c.score < 50 ? 'bg-yellow-500 group-hover:bg-yellow-400' :
+                        c.score < 70 ? 'bg-orange-500 group-hover:bg-orange-400' :
+                        'bg-red-500 group-hover:bg-red-400'
                       }`}
                       style={{ width: `${Math.min(100, c.score)}%` }}
                     />
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">{c.description}</p>
+                <p className="text-xs text-gray-500 mt-1 group-hover:text-gray-400 transition-colors">{c.description}</p>
               </div>
             ))}
           </div>
         </div>
       </div>
+
+      <SectionObjective
+        title="Historical Momentum"
+        objective="60-day trend lines show whether risk is accelerating, plateauing, or declining. Diverging components signal conflicting narratives that warrant investigation."
+        type="watch"
+      />
 
       {/* Component trend chart */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
@@ -227,6 +250,14 @@ export default function RiskDetail() {
           ))}
         </div>
       </div>
+
+      {/* Component drill-down modal */}
+      <ComponentDrilldown
+        isOpen={drilldownComponent !== null}
+        onClose={() => setDrilldownComponent(null)}
+        bankId={selectedBank}
+        componentName={drilldownComponent || ''}
+      />
     </div>
   )
 }

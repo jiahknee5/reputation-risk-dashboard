@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import PageObjective from '../components/PageObjective'
+import InsightBox from '../components/InsightBox'
+import SectionObjective from '../components/SectionObjective'
 import { getStakeholderImpact } from '../services/api'
 
 function impactBadge(level: string) {
@@ -24,12 +27,42 @@ const STAKEHOLDER_ICONS: Record<string, string> = {
 export default function StakeholderImpact() {
   const data = useMemo(() => getStakeholderImpact(), [])
 
+  // Generate insight
+  const allStakeholders = data.flatMap(b => b.stakeholders)
+  const highImpact = allStakeholders.filter(s => s.impact_level === 'High')
+  const mostAffectedGroup = highImpact.reduce((acc, s) => {
+    acc[s.group] = (acc[s.group] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+  const topGroup = Object.entries(mostAffectedGroup).sort((a, b) => b[1] - a[1])[0]
+
+  const insight = highImpact.length > 0 ? {
+    type: 'warning' as const,
+    title: `${highImpact.length} high-impact stakeholder exposures`,
+    message: `${highImpact.length} stakeholder group${highImpact.length !== 1 ? 's' : ''} showing high reputation risk impact across ${data.length} institutions.`,
+    detail: topGroup ? `Most affected: ${topGroup[0]} (${topGroup[1]} institution${topGroup[1] !== 1 ? 's' : ''} with high impact)` : 'Monitor stakeholder sentiment closely.'
+  } : {
+    type: 'positive' as const,
+    title: 'Stakeholder impact within normal range',
+    message: `Analyzing ${allStakeholders.length} stakeholder groups across ${data.length} institutions. No high-impact exposures detected.`,
+    detail: 'Continue monitoring for emerging stakeholder concerns.'
+  }
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-white">Stakeholder Impact Analysis</h2>
-        <p className="text-sm text-gray-500 mt-1">Reputation risk exposure across key stakeholder groups by institution</p>
-      </div>
+    <div className="space-y-4">
+      <PageObjective
+        title="Stakeholder Impact Analysis"
+        objective="Map risk to stakeholder consequences"
+        description="Reputation risk impact across 4 key stakeholder groups (Shareholders, Customers, Regulators, Employees) with group-specific metrics and exposure levels."
+      />
+
+      <InsightBox {...insight} />
+
+      <SectionObjective
+        title="Four-Stakeholder Framework"
+        objective="Impact mapping across Shareholders, Customers, Regulators, and Employees translates reputation risk into stakeholder-specific consequences. High-impact exposures signal relationship risks requiring proactive management."
+        type={highImpact.length > 0 ? 'action' : 'info'}
+      />
 
       {data.map((bankData) => (
         <div key={bankData.bank.id} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">

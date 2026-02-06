@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from 'react'
 import RiskGauge from '../components/RiskGauge'
 import PageObjective from '../components/PageObjective'
 import InsightBox from '../components/InsightBox'
+import SectionObjective from '../components/SectionObjective'
 import { getPeerBenchmarking } from '../services/api'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
@@ -91,6 +92,24 @@ export default function PeerBenchmarking() {
   const selectedGroup = peerGroups.find(g => g.id === selectedGroupId)
   const groupName = selectedGroup ? selectedGroup.name : 'All Category I/II/III institutions'
 
+  // Group banks by their peer groups (when showing all)
+  const banksByGroup = useMemo(() => {
+    if (selectedGroupId) {
+      // If a specific group is selected, don't subdivide
+      return [{ group: selectedGroup, banks: data.banks }]
+    }
+
+    // When showing all banks, group by default peer groups
+    const defaultGroups = peerGroups.filter(g =>
+      g.name.startsWith('Category') || g.name === 'Other Institutions'
+    ).sort((a, b) => a.name.localeCompare(b.name)) // Cat I, II, III, Other
+
+    return defaultGroups.map(group => ({
+      group,
+      banks: data.banks.filter(b => group.bankIds.includes(b.bank.id))
+    })).filter(g => g.banks.length > 0)
+  }, [data.banks, selectedGroupId, selectedGroup, peerGroups])
+
   const usbData = data.banks.find(b => b.bank.ticker === 'USB')
   const insight = usbData ? (() => {
     const deviation = usbData.deviation_from_peer
@@ -176,25 +195,41 @@ export default function PeerBenchmarking() {
         </div>
       </div>
 
-      {/* Gauges row */}
+      <SectionObjective
+        title="Interactive Ranking"
+        objective="Visual risk ranking with peer deviations shows outliers at a glance. Click any gauge to highlight that institution across all visualizations below."
+        type="info"
+      />
+
+      {/* Gauges by peer group */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-        <div className="mb-3">
+        <div className="mb-4">
           <h3 className="text-sm font-medium text-white">Composite Risk Ranking</h3>
-          <p className="text-[10px] text-gray-500">Click any institution to highlight</p>
+          <p className="text-[10px] text-gray-500">Click any institution to highlight across all charts</p>
         </div>
-        <div className="flex flex-wrap justify-center gap-4">
-          {data.banks.map((b) => (
-            <div
-              key={b.bank.id}
-              className={`text-center cursor-pointer transition-all ${
-                selectedBank === b.bank.ticker ? 'scale-110 ring-2 ring-blue-500 rounded-lg p-2 -m-2' : 'hover:scale-105'
-              }`}
-              onClick={() => setSelectedBank(selectedBank === b.bank.ticker ? null : b.bank.ticker)}
-            >
-              <RiskGauge score={b.composite_score} label={b.bank.ticker} size="sm" />
-              <p className={`text-[10px] mt-1 ${b.deviation_from_peer > 0 ? 'text-red-400' : 'text-green-400'}`}>
-                {b.deviation_from_peer > 0 ? '+' : ''}{b.deviation_from_peer}
-              </p>
+        <div className="space-y-6">
+          {banksByGroup.map(({ group, banks }) => group && (
+            <div key={group.id}>
+              <div className="mb-3">
+                <h4 className="text-xs font-semibold text-blue-400">{group.name}</h4>
+                <p className="text-[10px] text-gray-500 mt-0.5">{group.description} — {banks.length} institution{banks.length !== 1 ? 's' : ''}</p>
+              </div>
+              <div className="flex flex-wrap gap-4">
+                {banks.map((b) => (
+                  <div
+                    key={b.bank.id}
+                    className={`text-center cursor-pointer transition-all ${
+                      selectedBank === b.bank.ticker ? 'scale-110 ring-2 ring-blue-500 rounded-lg p-2 -m-2' : 'hover:scale-105'
+                    }`}
+                    onClick={() => setSelectedBank(selectedBank === b.bank.ticker ? null : b.bank.ticker)}
+                  >
+                    <RiskGauge score={b.composite_score} label={b.bank.ticker} size="sm" />
+                    <p className={`text-[10px] mt-1 ${b.deviation_from_peer > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                      {b.deviation_from_peer > 0 ? '+' : ''}{b.deviation_from_peer}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>

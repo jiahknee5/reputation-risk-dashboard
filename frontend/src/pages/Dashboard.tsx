@@ -5,6 +5,8 @@ import Watchlist from '../components/Watchlist'
 import { WatchlistToggle } from '../components/Watchlist'
 import PageObjective from '../components/PageObjective'
 import InsightBox from '../components/InsightBox'
+import SectionObjective from '../components/SectionObjective'
+import DetailModal from '../components/DetailModal'
 import { getDashboardOverview, getRiskHistory, getAlertThresholds, type DashboardOverview } from '../services/api'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -73,6 +75,8 @@ export default function Dashboard() {
   const [history, setHistory] = useState<{ date: string; composite_score: number }[]>([])
   const [peerGroups, setPeerGroups] = useState<PeerGroup[]>([])
   const [selectedGroupId, setSelectedGroupId] = useState<string>('')
+  const [selectedBankForModal, setSelectedBankForModal] = useState<DashboardOverview | null>(null)
+  const [primaryBankId, setPrimaryBankId] = useState<number | null>(null)
 
   useEffect(() => {
     getDashboardOverview().then(data => {
@@ -194,6 +198,12 @@ export default function Dashboard() {
       {usbInsight && <InsightBox {...usbInsight} />}
       <AlertBanner alerts={alerts} />
 
+      <SectionObjective
+        title="Quick Insights"
+        objective="Primary focus bank and peer comparisons provide executive-level snapshot of portfolio positioning and relative risk exposure at a glance."
+        type="info"
+      />
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Primary score card - US Bank */}
         {primaryBank && (
@@ -262,6 +272,12 @@ export default function Dashboard() {
       </div>
 
       {/* Bank detail cards */}
+      <SectionObjective
+        title="Portfolio-Wide View"
+        objective="Complete heat map across all Category I/II/III banks identifies emerging concentrations of risk before they cascade into systemic issues."
+        type={overview.some(b => b.composite_score >= 70) ? 'action' : 'watch'}
+      />
+
       <div>
         <div className="mb-2">
           <h3 className="text-sm font-medium text-white">All Institutions</h3>
@@ -269,7 +285,11 @@ export default function Dashboard() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
           {overview.map(b => (
-            <div key={b.bank.id} className="bg-gray-900 border border-gray-800 rounded-xl p-3 hover:border-gray-700 transition-colors cursor-pointer">
+            <div
+              key={b.bank.id}
+              className="bg-gray-900 border border-gray-800 rounded-xl p-3 hover:border-gray-700 hover:scale-105 transition-all cursor-pointer"
+              onClick={() => setSelectedBankForModal(b)}
+            >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <WatchlistToggle bankId={b.bank.id} />
@@ -296,6 +316,67 @@ export default function Dashboard() {
           ))}
         </div>
       </div>
+
+      {/* Bank Detail Modal */}
+      {selectedBankForModal && (
+        <DetailModal
+          isOpen={!!selectedBankForModal}
+          onClose={() => setSelectedBankForModal(null)}
+          title={selectedBankForModal.bank.name}
+          subtitle={`${selectedBankForModal.bank.ticker} — Detailed Risk Breakdown`}
+          size="lg"
+        >
+          <div className="space-y-6">
+            {/* Composite Score */}
+            <div className="flex items-center justify-center">
+              <RiskGauge score={selectedBankForModal.composite_score} label="Composite Score" />
+            </div>
+
+            {/* ESG Flags */}
+            {selectedBankForModal.esg_flags.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-400 mb-2">ESG Risk Themes</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedBankForModal.esg_flags.map(f => (
+                    <ESGBadge key={f.theme} theme={f.theme} count={f.count} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Component Breakdown */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-400 mb-3">Risk Component Scores</h4>
+              <div className="space-y-3">
+                <DriverBar name="Media Sentiment" score={selectedBankForModal.media_sentiment_score} />
+                <DriverBar name="Consumer Complaints" score={selectedBankForModal.complaint_score} />
+                <DriverBar name="Market Signal" score={selectedBankForModal.market_score} />
+                <DriverBar name="Regulatory" score={selectedBankForModal.regulatory_score} />
+              </div>
+            </div>
+
+            {/* Top Drivers */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-400 mb-3">Top Risk Drivers</h4>
+              <div className="space-y-2">
+                {selectedBankForModal.top_drivers.map((driver, i) => (
+                  <div key={i} className="flex items-center justify-between bg-gray-800/30 rounded-lg p-3">
+                    <span className="text-sm text-gray-300">{driver.name}</span>
+                    <span className={`text-sm font-semibold ${
+                      driver.score >= 70 ? 'text-red-400' : driver.score >= 50 ? 'text-orange-400' : 'text-yellow-400'
+                    }`}>{Math.round(driver.score)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Data Source */}
+            <div className="pt-4 border-t border-gray-800">
+              <DataSourceBadge source={selectedBankForModal.data_source} />
+            </div>
+          </div>
+        </DetailModal>
+      )}
     </div>
   )
 }

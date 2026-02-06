@@ -372,7 +372,7 @@ const RISK_KEYWORDS_LIST = [
 export function getRegulatoryIntel() {
   const enforcementActions: {
     id: number; bank: BankInfo; agency: string; action_date: string;
-    action_type: string; description: string; penalty_amount: number | null; severity: number;
+    action_type: string; description: string; penalty_amount: number | null; severity: number; url: string;
   }[] = []
 
   let id = 1
@@ -384,6 +384,15 @@ export function getRegulatoryIntel() {
       const hasPenalty = rand() > 0.4
       const severity = actionType.includes('Consent') ? 4 : actionType.includes('Cease') ? 5 : actionType.includes('Civil') ? 4 : 2 + Math.floor(rand() * 2)
 
+      // Generate agency-specific URLs
+      const agencyUrls: Record<string, string> = {
+        'OCC': 'https://www.occ.gov/topics/supervision-and-examination/enforcement-actions/index-enforcement-actions.html',
+        'FDIC': 'https://www.fdic.gov/bank/individual/enforcement/index.html',
+        'Federal Reserve': 'https://www.federalreserve.gov/supervisionreg/enforcement-actions-about.htm',
+        'SEC': 'https://www.sec.gov/litigation/litreleases.shtml',
+        'CFPB': 'https://www.consumerfinance.gov/enforcement/actions/'
+      }
+
       enforcementActions.push({
         id: id++,
         bank,
@@ -393,15 +402,26 @@ export function getRegulatoryIntel() {
         description: `${agency} issued ${actionType.toLowerCase()} against ${bank.name} related to ${['BSA/AML compliance', 'consumer protection', 'risk management', 'capital adequacy', 'lending practices'][Math.floor(rand() * 5)]}.`,
         penalty_amount: hasPenalty ? Math.round(rand() * 50 + 1) * 1000000 : null,
         severity,
+        url: agencyUrls[agency] || '#',
       })
     }
   }
 
   enforcementActions.sort((a, b) => b.action_date.localeCompare(a.action_date))
 
+  // CIK mappings for SEC EDGAR URLs
+  const cikMap: Record<string, string> = {
+    'JPM': '0000019617', 'BAC': '0000070858', 'C': '0000831001', 'WFC': '0000072971',
+    'GS': '0000886982', 'MS': '0000895421', 'BK': '0001390777', 'STT': '0000093751',
+    'USB': '0000036104', 'PNC': '0000713676', 'TFC': '0000092230', 'COF': '0000927628',
+    'TD': '0000947263', 'FITB': '0000035527', 'BMO': '0001089113', 'CFG': '0000759944',
+    'MTB': '0000036270', 'KEY': '0000091576', 'HBAN': '0000049196', 'RF': '0000028412',
+    'ALLY': '0001469109', 'AXP': '0000004962', 'DFS': '0001393612'
+  }
+
   const secFilings: {
     bank: BankInfo; filing_type: string; filed_date: string;
-    risk_keywords: string[]; sentiment_score: number;
+    risk_keywords: string[]; sentiment_score: number; url: string;
   }[] = []
 
   for (const bank of BANKS) {
@@ -412,12 +432,14 @@ export function getRegulatoryIntel() {
         const kw = RISK_KEYWORDS_LIST[Math.floor(rand() * RISK_KEYWORDS_LIST.length)]
         if (!keywords.includes(kw)) keywords.push(kw)
       }
+      const cik = cikMap[bank.ticker] || '0000000000'
       secFilings.push({
         bank,
         filing_type: SEC_FILING_TYPES[Math.floor(rand() * SEC_FILING_TYPES.length)],
         filed_date: dateStr(Math.floor(rand() * 180)),
         risk_keywords: keywords,
         sentiment_score: Math.round(gaussRand(-0.1, 0.3) * 100) / 100,
+        url: `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${cik}&type=&dateb=&owner=exclude&count=40`,
       })
     }
   }
@@ -439,7 +461,7 @@ export function getCrisisSimulation(bankId: number) {
       name: 'Data Breach (Critical)',
       probability: 0.08,
       impact: 'Severe',
-      description: 'Large-scale customer data breach affecting 1M+ accounts. Triggers regulatory investigation, class action litigation, and sustained media coverage.',
+      description: 'SCENARIO: Sophisticated cybersecurity breach exposes 1.2M+ customer records including SSNs, account numbers, and transaction histories. TRIGGERS: (1) Third-party vendor compromise or unpatched vulnerability exploitation. (2) Immediate regulatory notification to OCC/FDIC/state AGs within 36 hours. (3) Class action litigation filed within 2 weeks. CASCADING IMPACTS: Media cycle intensifies as breach scope expands. Customers close accounts (5-8% deposit outflow in 90 days). Credit card reissue costs $15-25M. CFPB enforcement action probable. Stock price decline 12-18%. Cybersecurity insurance claim ($50-100M) covers portion but reputational damage persists. MITIGATION: Crisis comms playbook execution, identity monitoring for 2 years, third-party forensics, board-level remediation program.',
       projected_score: Math.min(95, baseScore + 35 + Math.round(gaussRand(0, 5))),
       recovery_days: 180,
       financial_impact: '$200M - $500M',
@@ -448,7 +470,7 @@ export function getCrisisSimulation(bankId: number) {
       name: 'Regulatory Enforcement (High)',
       probability: 0.15,
       impact: 'High',
-      description: 'Major consent order from OCC/FDIC for compliance failures. Restricts business activities and requires remediation program.',
+      description: 'SCENARIO: OCC/FDIC issues formal consent order for BSA/AML program deficiencies or fair lending violations. TRIGGERS: (1) Exam findings reveal systemic control failures. (2) Suspicious Activity Report (SAR) filing gaps or discriminatory lending patterns. (3) Public enforcement action published on agency website. BUSINESS IMPACT: Growth restrictions — asset cap or M&A prohibition. Mandatory independent consultant ($20-50M multiyear engagement). Elevated CAMELS rating affects funding costs. Board and executive compensation clawbacks. STAKEHOLDER REACTION: Institutional investors divest ESG-screened positions. Activist shareholders demand governance changes. OCC embeds onsite monitors. TIMELINE: 12-18 month remediation, quarterly progress reports to regulator. Full recovery requires sustained exam rating improvement (2-3 exam cycles).',
       projected_score: Math.min(90, baseScore + 25 + Math.round(gaussRand(0, 4))),
       recovery_days: 120,
       financial_impact: '$50M - $200M',
@@ -457,7 +479,7 @@ export function getCrisisSimulation(bankId: number) {
       name: 'Executive Misconduct (High)',
       probability: 0.05,
       impact: 'High',
-      description: 'C-suite executive faces allegations of fraud or misconduct. Board-level crisis requiring immediate leadership change.',
+      description: 'SCENARIO: C-suite executive (CEO/CFO/CRO) faces credible allegations of fraud, sexual harassment, or insider trading. TRIGGERS: (1) Whistleblower complaint or investigative journalism exposes misconduct. (2) Board initiates internal investigation via outside counsel. (3) DOJ/SEC opens parallel criminal/civil probe. GOVERNANCE CASCADE: Emergency board meeting within 48 hours. Executive placed on administrative leave. Interim leadership appointed. Compensation clawback ($10-30M). MARKET REACTION: Stock drops 8-15% on headline. Credit rating agencies place on negative watch. Institutional investors demand governance reforms (independent chair, board refreshment). REGULATORY: OCC Section 8 proceeding for prohibition order. Personal liability for executive ($5-20M civil penalties). RECOVERY: Successful prosecution or exoneration determines timeline. Permanent reputational scar regardless of outcome.',
       projected_score: Math.min(92, baseScore + 30 + Math.round(gaussRand(0, 5))),
       recovery_days: 150,
       financial_impact: '$100M - $300M',
@@ -466,7 +488,7 @@ export function getCrisisSimulation(bankId: number) {
       name: 'Market Downturn (Moderate)',
       probability: 0.25,
       impact: 'Moderate',
-      description: 'Broad market correction with 20%+ decline in bank equities. Credit quality deterioration in CRE and consumer portfolios.',
+      description: 'SCENARIO: Broad market correction with 20-25% equity index decline and recession onset. PORTFOLIO STRESS: (1) CRE office vacancy climbs to 25%+, LTVs breach covenants. (2) Consumer charge-offs rise 40-60 bps as unemployment hits 5.5-6%. (3) Unrealized losses in AFS securities portfolio ($500M-1.5B depending on duration). FUNDING PRESSURE: Deposit beta rises as customers chase rate. Wholesale funding costs spike 100-150 bps. STRATEGIC RESPONSE: Tighten underwriting, increase loan loss reserves by $200-400M (50-75 bps of loans). Dividend cut consideration if CET1 approaches regulatory minimum + buffer. REPUTATION IMPACT: Analyst downgrades if reserve build lags peers. Congressional hearings if foreclosure volume spikes. Moderate duration (6-12 months) assuming Fed policy response stabilizes markets.',
       projected_score: Math.min(80, baseScore + 18 + Math.round(gaussRand(0, 4))),
       recovery_days: 90,
       financial_impact: '$1B - $3B (unrealized)',
@@ -475,7 +497,7 @@ export function getCrisisSimulation(bankId: number) {
       name: 'Social Media Crisis (Moderate)',
       probability: 0.20,
       impact: 'Moderate',
-      description: 'Viral customer complaint or employee video generates sustained negative attention. Drives complaint volume spike and deposit outflows.',
+      description: 'SCENARIO: Viral social media incident drives national news cycle and CFPB complaint surge. TYPICAL TRIGGERS: (1) Customer records branch interaction showing discriminatory treatment (racial profiling, disability accommodation failure). (2) Employee whistleblower video exposes toxic culture or predatory sales tactics. (3) TikTok/Twitter trend like #BoycottBank gains 10M+ views in 48 hours. VELOCITY: Traditional PR playbook fails — apology tweets backfire, executive statement deemed insincere. QUANTIFIED IMPACTS: CFPB complaint volume spikes 300-500% (system flags outlier). Net Promoter Score drops 15-25 points. Deposit outflows accelerate ($200-500M in affected markets). Brand tracker shows 40% awareness of incident among general public. MITIGATION: Swift executive response with concrete actions (policy changes, employee training, community investment). Third-party civil rights audit. 30-45 day media half-life if handled correctly, but digital footprint permanent.',
       projected_score: Math.min(75, baseScore + 15 + Math.round(gaussRand(0, 3))),
       recovery_days: 45,
       financial_impact: '$10M - $50M',

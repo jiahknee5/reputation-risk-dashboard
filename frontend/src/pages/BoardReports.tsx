@@ -1,7 +1,27 @@
-import { useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import RiskGauge from '../components/RiskGauge'
 import ExportButton from '../components/ExportButton'
-import { getBoardReport } from '../services/api'
+import PageObjective from '../components/PageObjective'
+import InsightBox from '../components/InsightBox'
+import { getBanks, getBoardReport } from '../services/api'
+
+interface PeerGroup {
+  id: string
+  name: string
+  description: string
+  bankIds: number[]
+  createdAt: number
+  updatedAt: number
+}
+
+function loadPeerGroups(): PeerGroup[] {
+  try {
+    const stored = localStorage.getItem('reprisk-peer-groups')
+    return stored ? JSON.parse(stored) : []
+  } catch {
+    return []
+  }
+}
 
 function priorityBadge(priority: string) {
   const colors: Record<string, string> = {
@@ -17,14 +37,86 @@ function priorityBadge(priority: string) {
 }
 
 export default function BoardReports() {
-  const report = useMemo(() => getBoardReport(), [])
+  const allBanks = useMemo(() => getBanks(), [])
+  const allReport = useMemo(() => getBoardReport(), [])
+  const [peerGroups, setPeerGroups] = useState<PeerGroup[]>([])
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('')
+
+  useEffect(() => {
+    setPeerGroups(loadPeerGroups())
+  }, [])
+
+  // Filter report by peer group
+  const report = useMemo(() => {
+    if (!selectedGroupId) return allReport
+
+    const group = peerGroups.find(g => g.id === selectedGroupId)
+    if (!group) return allReport
+
+    // Filter banks to only those in the peer group
+    const filteredBanks = allReport.banks.filter(b => group.bankIds.includes(b.bank.id))
+
+    // Recalculate peer average for this group
+    const peerAverage = filteredBanks.length > 0
+      ? Math.round(filteredBanks.reduce((sum, b) => sum + b.composite_score, 0) / filteredBanks.length)
+      : allReport.peer_average
+
+    return {
+      ...allReport,
+      banks: filteredBanks,
+      peer_average: peerAverage,
+    }
+  }, [allReport, selectedGroupId, peerGroups])
+
+  const selectedGroup = peerGroups.find(g => g.id === selectedGroupId)
+
+  // Generate insight based on report data
+  const highPriority = report.recommendations.filter(r => r.priority === 'High').length
+  const avgScore = report.banks.length > 0
+    ? Math.round(report.banks.reduce((sum, b) => sum + b.composite_score, 0) / report.banks.length)
+    : 0
+  const abovePeer = report.banks.filter(b => b.composite_score > report.peer_average).length
+
+  const groupName = selectedGroup ? selectedGroup.name : 'All institutions'
+  const insight = highPriority > 0 ? {
+    type: 'action' as const,
+    title: `${highPriority} high-priority recommendation${highPriority !== 1 ? 's' : ''} requiring immediate board attention`,
+    message: `Board report includes ${highPriority} high-priority action item${highPriority !== 1 ? 's' : ''}. ${groupName} average: ${avgScore}.`,
+    detail: `${abovePeer} institution${abovePeer !== 1 ? 's' : ''} above peer average (${report.peer_average}). ${report.key_findings.length} key findings identified.`
+  } : avgScore >= 50 ? {
+    type: 'warning' as const,
+    title: 'Portfolio risk elevated above board tolerance',
+    message: `${groupName} average ${avgScore} in elevated range. ${report.key_findings.length} key findings for board review.`,
+    detail: `${abovePeer} institution${abovePeer !== 1 ? 's' : ''} above peer average (${report.peer_average}). Monitor closely.`
+  } : {
+    type: 'positive' as const,
+    title: 'Reputation risk within board-approved tolerances',
+    message: `${groupName} average ${avgScore} within acceptable range. ${report.banks.length} institution${report.banks.length !== 1 ? 's' : ''} monitored.`,
+    detail: `${report.recommendations.length} recommendation${report.recommendations.length !== 1 ? 's' : ''} for continuous improvement. ${report.key_findings.length} key findings noted.`
+  }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-white">Board Risk Report</h2>
-        <p className="text-sm text-gray-500 mt-1">Executive summary for board and risk committee review</p>
-      </div>
+    <div className="space-y-4">
+      <PageObjective
+        title="Board Risk Reports"
+        objective="Provide board-ready summary with recommendations"
+        description={`Executive reputation risk summary for board and risk committee review${selectedGroup ? ` — ${selectedGroup.name} peer group` : ' — all monitored institutions'}. Aggregated scores, key findings, priority recommendations, and detailed component breakdowns.`}
+      >
+        <select
+          className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
+          value={selectedGroupId}
+          onChange={(e) => setSelectedGroupId(e.target.value)}
+        >
+          <option value="">All Institutions ({allBanks.length})</option>
+          {peerGroups.map(group => (
+            <option key={group.id} value={group.id}>
+              {group.name} ({allBanks.filter(b => group.bankIds.includes(b.id)).length} banks)
+            </option>
+          ))}
+        </select>
+      </PageObjective>
+
+      <InsightBox {...insight} />
 
       {/* Report header */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
@@ -62,7 +154,14 @@ export default function BoardReports() {
         </div>
         <div className="bg-gray-800/50 rounded-lg p-4">
           <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Executive Summary</h4>
-          <p className="text-sm text-gray-300 leading-relaxed">{report.executive_summary}</p>
+          <p className="text-sm text-gray-300 leading-relaxed">
+            {selectedGroup ? `${selectedGroup.name}: ` : ''}{report.executive_summary}
+          </p>
+          {selectedGroup && (
+            <p className="text-xs text-blue-400 mt-2">
+              📊 Filtered to {selectedGroup.name} — {report.banks.length} institution{report.banks.length !== 1 ? 's' : ''} ({selectedGroup.description})
+            </p>
+          )}
         </div>
       </div>
 

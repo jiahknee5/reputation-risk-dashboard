@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import PageObjective from '../components/PageObjective'
 import InsightBox from '../components/InsightBox'
+import SectionObjective from '../components/SectionObjective'
 import { getBanks, getCrisisSimulation } from '../services/api'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -126,44 +127,51 @@ export default function CrisisSimulation() {
         </ResponsiveContainer>
       </div>
 
+      <SectionObjective
+        title="Stress Test Scenarios"
+        objective="Each scenario models triggers, cascading impacts, stakeholder reactions, and recovery timelines. Probability-weighted Monte Carlo simulation quantifies reputation risk under plausible crisis conditions — enabling board-level preparedness planning."
+        type={data.scenarios.some(s => s.probability > 0.15) ? 'watch' : 'info'}
+      />
+
       {/* Scenario cards */}
-      <div>
-        <h3 className="text-lg font-semibold text-white mb-3">Scenario Analysis</h3>
-        <div className="space-y-4">
-          {data.scenarios.map((scenario, i) => (
-            <div key={i} className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="text-sm font-semibold text-white">{scenario.name}</h4>
+      <div className="space-y-4">
+        {data.scenarios.map((scenario, i) => (
+          <div key={i} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h4 className="text-base font-semibold text-white">{scenario.name}</h4>
                     {impactBadge(scenario.impact)}
                   </div>
-                  <p className="text-xs text-gray-500 max-w-2xl">{scenario.description}</p>
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <p className="text-xs text-gray-500">Probability</p>
+                      <p className="text-sm font-medium text-gray-300">{(scenario.probability * 100).toFixed(0)}%</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Recovery Timeline</p>
+                      <p className="text-sm font-medium text-gray-300">{scenario.recovery_days} days</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Est. Financial Impact</p>
+                      <p className="text-sm font-medium text-red-400">{scenario.financial_impact}</p>
+                    </div>
+                  </div>
                 </div>
                 <div className="text-right ml-6">
-                  <p className={`text-2xl font-bold ${
+                  <p className={`text-3xl font-bold ${
                     scenario.projected_score >= 70 ? 'text-red-400' : scenario.projected_score >= 50 ? 'text-orange-400' : 'text-yellow-400'
                   }`}>{scenario.projected_score}</p>
                   <p className="text-xs text-gray-500">Projected Score</p>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-800">
-                <div>
-                  <p className="text-xs text-gray-500">Probability</p>
-                  <p className="text-sm font-medium text-gray-300">{(scenario.probability * 100).toFixed(0)}%</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Recovery Timeline</p>
-                  <p className="text-sm font-medium text-gray-300">{scenario.recovery_days} days</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Est. Financial Impact</p>
-                  <p className="text-sm font-medium text-red-400">{scenario.financial_impact}</p>
-                </div>
+              <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-line">{scenario.description}</p>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   )

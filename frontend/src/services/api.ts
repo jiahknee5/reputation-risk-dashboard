@@ -6,6 +6,7 @@
 
 import * as demo from '../data/demo'
 import type { BankInfo } from '../data/demo'
+import { fetchGDELTNews, enrichWithSentiment } from '../api/gdelt-news'
 
 // Re-export types
 export type { BankInfo } from '../data/demo'
@@ -443,6 +444,29 @@ export async function getSignals(bankId?: number, limit = 100) {
         console.error(`Failed to fetch news for ${bank.name}:`, err)
       }
     }
+
+    // GDELT news as signals (real-time global coverage, 150K+ sources)
+    try {
+      const gdeltArticles = await fetchGDELTNews(bank.name, 10)
+      const enriched = enrichWithSentiment(gdeltArticles)
+
+      for (const article of enriched) {
+        liveSignals.push({
+          id: id++,
+          bank_id: bank.id,
+          source: 'news',
+          title: article.title,
+          content: article.excerpt?.slice(0, 200) || null,
+          url: article.url,
+          published_at: article.publishedAt,
+          sentiment_score: article.sentiment,
+          sentiment_label: article.sentimentLabel,
+          is_anomaly: Math.abs(article.sentiment) > 0.8,
+        })
+      }
+    } catch (err) {
+      console.error(`Failed to fetch GDELT news for ${bank.name}:`, err)
+    }
   }
 
   // Sort by date descending (most recent first)
@@ -450,8 +474,27 @@ export async function getSignals(bankId?: number, limit = 100) {
   return liveSignals.slice(0, limit)
 }
 
-export function getSignalVolume(bankId?: number) {
-  return demo.getSignalVolume(bankId)
+export async function getSignalVolume(bankId?: number) {
+  // Fetch real signals and aggregate by date and source
+  const signals = await getSignals(bankId, 500) // Get more for volume aggregation
+
+  const volumeMap = new Map<string, { date: string; source: string; count: number }>()
+
+  for (const signal of signals) {
+    if (!signal.published_at) continue
+
+    const date = signal.published_at.split('T')[0] // Extract YYYY-MM-DD
+    const key = `${date}-${signal.source}`
+
+    const existing = volumeMap.get(key)
+    if (existing) {
+      existing.count++
+    } else {
+      volumeMap.set(key, { date, source: signal.source, count: 1 })
+    }
+  }
+
+  return Array.from(volumeMap.values()).sort((a, b) => a.date.localeCompare(b.date))
 }
 
 export async function getComplaintSummary(bankId?: number) {

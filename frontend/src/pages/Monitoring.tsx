@@ -5,6 +5,7 @@ import {
 } from 'recharts'
 import PageObjective from '../components/PageObjective'
 import InsightBox from '../components/InsightBox'
+import SectionObjective from '../components/SectionObjective'
 
 interface PeerGroup {
   id: string
@@ -54,13 +55,18 @@ function sourceBadge(source: string) {
 }
 
 export default function Monitoring() {
-  const [selectedBank, setSelectedBank] = useState<number | undefined>(undefined)
+  const allBanks = useMemo(() => getBanks(), [])
+  // Default to US Bancorp (USB) on initial load to avoid fetching all 23 banks
+  const defaultBank = allBanks.find(b => b.ticker === 'USB')?.id || allBanks[0]?.id
+  const [selectedBank, setSelectedBank] = useState<number | undefined>(defaultBank)
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined)
   const [selectedSource, setSelectedSource] = useState<string | undefined>(undefined)
-  const allBanks = useMemo(() => getBanks(), [])
   const [peerGroups, setPeerGroups] = useState<PeerGroup[]>([])
   const [selectedGroupId, setSelectedGroupId] = useState<string>('')
   const [allSignals, setAllSignals] = useState<Awaited<ReturnType<typeof getSignals>>>([])
+  const [expandedSignals, setExpandedSignals] = useState<Set<number>>(new Set())
+  const [volume, setVolume] = useState<Awaited<ReturnType<typeof getSignalVolume>>>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     setPeerGroups(loadPeerGroups())
@@ -76,10 +82,19 @@ export default function Monitoring() {
     return allBanks.filter(b => group.bankIds.includes(b.id))
   }, [allBanks, selectedGroupId, peerGroups])
 
-  const volume = useMemo(() => getSignalVolume(selectedBank), [selectedBank])
-
   useEffect(() => {
-    getSignals(selectedBank, 100).then(setAllSignals)
+    setLoading(true)
+    Promise.all([
+      getSignals(selectedBank, 100),
+      getSignalVolume(selectedBank)
+    ]).then(([signals, vol]) => {
+      setAllSignals(signals)
+      setVolume(vol)
+      setLoading(false)
+    }).catch(err => {
+      console.error('Failed to load signals:', err)
+      setLoading(false)
+    })
   }, [selectedBank])
 
   // Filter signals by date and source
@@ -132,7 +147,11 @@ export default function Monitoring() {
             value={selectedGroupId}
             onChange={(e) => {
               setSelectedGroupId(e.target.value)
-              setSelectedBank(undefined)
+              // When changing groups, select the first bank in the new group instead of undefined
+              const newBanks = e.target.value
+                ? allBanks.filter(b => peerGroups.find(g => g.id === e.target.value)?.bankIds.includes(b.id))
+                : allBanks
+              setSelectedBank(newBanks[0]?.id || defaultBank)
             }}
           >
             <option value="">All Institutions ({allBanks.length})</option>
@@ -144,20 +163,26 @@ export default function Monitoring() {
           </select>
           <select
             className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-2 text-sm"
-            value={selectedBank ?? ''}
-            onChange={(e) => setSelectedBank(e.target.value ? Number(e.target.value) : undefined)}
+            value={selectedBank}
+            onChange={(e) => setSelectedBank(Number(e.target.value))}
           >
-            <option value="">All Banks ({banks.length})</option>
             {banks.map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name} ({b.ticker})
               </option>
             ))}
           </select>
+          <p className="text-xs text-gray-500">Showing signals for selected institution</p>
         </div>
       </PageObjective>
 
       <InsightBox {...insight} />
+
+      <SectionObjective
+        title="Volume Spike Detection"
+        objective="Stacked daily volume by source identifies unusual activity patterns. Click any bar to drill into that day's signals — volume spikes often precede material events."
+        type={anomalyCount > 5 ? 'watch' : 'info'}
+      />
 
       {/* Volume chart */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
@@ -234,6 +259,12 @@ export default function Monitoring() {
         </div>
       </div>
 
+      <SectionObjective
+        title="Live Signal Stream"
+        objective="Real-time CFPB complaints and news articles flow in as they're published. Anomalies flagged with red border indicate unusual patterns requiring investigation."
+        type={anomalyCount > 0 ? 'action' : 'info'}
+      />
+
       {/* Signal feed */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
         <div className="p-3 border-b border-gray-800 flex items-center justify-between">
@@ -271,7 +302,32 @@ export default function Monitoring() {
           </div>
         </div>
         <div className="divide-y divide-gray-800 max-h-[500px] overflow-y-auto">
-          {signals.map((s) => {
+          {loading ? (
+            <div className="p-8 text-center text-gray-500">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-3"></div>
+              <p className="text-sm">Loading signals from CFPB and GDELT...</p>
+            </div>
+          ) : signals.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              <p className="text-sm">No signals found. Try adjusting filters.</p>
+            </div>
+          ) : null}
+          {!loading && signals.map((s) => {
+            const isExpanded = expandedSignals.has(s.id)
+            const toggleExpanded = (e: React.MouseEvent) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setExpandedSignals(prev => {
+                const next = new Set(prev)
+                if (next.has(s.id)) {
+                  next.delete(s.id)
+                } else {
+                  next.add(s.id)
+                }
+                return next
+              })
+            }
+
             const content = (
               <div className={`p-3 hover:bg-gray-800/50 transition-colors ${
                 s.is_anomaly ? 'border-l-2 border-red-500' : ''
@@ -286,12 +342,20 @@ export default function Monitoring() {
                         </span>
                       )}
                       {sentimentBadge(s.sentiment_label, s.sentiment_score)}
+                      {s.content && (
+                        <button
+                          onClick={toggleExpanded}
+                          className="text-xs text-blue-400 hover:text-blue-300 ml-auto"
+                        >
+                          {isExpanded ? 'Collapse' : 'Expand'}
+                        </button>
+                      )}
                     </div>
-                    <p className={`text-sm ${s.url ? 'text-blue-400 hover:text-blue-300' : 'text-gray-200'} truncate`}>
+                    <p className={`text-sm ${s.url ? 'text-blue-400 hover:text-blue-300' : 'text-gray-200'} ${!isExpanded && 'truncate'}`}>
                       {s.title}
                     </p>
                     {s.content && (
-                      <p className="text-xs text-gray-500 mt-1 truncate">{s.content}</p>
+                      <p className={`text-xs text-gray-500 mt-1 ${!isExpanded && 'truncate'}`}>{s.content}</p>
                     )}
                   </div>
                   <div className="text-xs text-gray-500 whitespace-nowrap">

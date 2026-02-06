@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Plus, Edit2, Trash2, Save, X, Users } from 'lucide-react'
 import PageObjective from '../components/PageObjective'
 import InsightBox from '../components/InsightBox'
-import { getBanks } from '../services/api'
+import { getBanks, type BankInfo } from '../services/api'
 
 interface PeerGroup {
   id: string
@@ -15,10 +15,68 @@ interface PeerGroup {
 
 const STORAGE_KEY = 'reprisk-peer-groups'
 
+function createDefaultGroups(allBanks: BankInfo[]): PeerGroup[] {
+  const now = Date.now()
+
+  // Category I - GSIBs ($700B+ assets)
+  const catI: PeerGroup = {
+    id: `default-cat-i-${now}`,
+    name: 'Category I GSIBs',
+    description: 'Global Systemically Important Banks ($700B+ assets)',
+    bankIds: allBanks.filter(b => ['JPM', 'BAC', 'C', 'WFC', 'GS', 'MS', 'BK', 'STT'].includes(b.ticker)).map(b => b.id),
+    createdAt: now,
+    updatedAt: now,
+  }
+
+  // Category II - Super-Regionals ($250-700B assets)
+  const catII: PeerGroup = {
+    id: `default-cat-ii-${now}`,
+    name: 'Category II Super-Regionals',
+    description: 'Super-Regional Banks ($250-700B assets)',
+    bankIds: allBanks.filter(b => ['USB', 'PNC', 'TFC', 'COF', 'TD', 'FITB', 'BMO', 'CFG'].includes(b.ticker)).map(b => b.id),
+    createdAt: now,
+    updatedAt: now,
+  }
+
+  // Category III - Regionals ($100-250B assets)
+  const catIII: PeerGroup = {
+    id: `default-cat-iii-${now}`,
+    name: 'Category III Regionals',
+    description: 'Regional Banks ($100-250B assets)',
+    bankIds: allBanks.filter(b => ['MTB', 'KEY', 'HBAN', 'RF', 'ALLY', 'AXP', 'DFS'].includes(b.ticker)).map(b => b.id),
+    createdAt: now,
+    updatedAt: now,
+  }
+
+  // Other - Any banks not in the above categories
+  const allCategoryBankIds = new Set([...catI.bankIds, ...catII.bankIds, ...catIII.bankIds])
+  const other: PeerGroup = {
+    id: `default-other-${now}`,
+    name: 'Other Institutions',
+    description: 'Banks not classified in Category I/II/III',
+    bankIds: allBanks.filter(b => !allCategoryBankIds.has(b.id)).map(b => b.id),
+    createdAt: now,
+    updatedAt: now,
+  }
+
+  // Only include "Other" if there are banks in it
+  return other.bankIds.length > 0 ? [catI, catII, catIII, other] : [catI, catII, catIII]
+}
+
 function loadPeerGroups(): PeerGroup[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
-    return stored ? JSON.parse(stored) : []
+    if (stored) {
+      const groups = JSON.parse(stored)
+      // If groups exist, return them
+      if (groups.length > 0) return groups
+    }
+
+    // No groups exist - create defaults
+    const allBanks = getBanks()
+    const defaults = createDefaultGroups(allBanks)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults))
+    return defaults
   } catch {
     return []
   }
