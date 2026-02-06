@@ -1,5 +1,14 @@
 # RepRisk Intel - Version History
 
+## ⚠️ CRITICAL: v2 is LOCKED - DO NOT MODIFY
+
+**See `V2_LOCKED.md` for complete documentation.**
+- Use `./build-v2-locked.sh` to rebuild v2
+- All development happens on v3 branch
+- v2.0.0 tag is immutable
+
+---
+
 ## v2.0.0 (STABLE - LOCKED) - 2026-02-06
 
 **Tag:** `v2.0.0`
