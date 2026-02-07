@@ -5,6 +5,7 @@ const navItems = [
   { to: '/', label: 'Executive Dashboard', icon: LayoutDashboard },
   { to: '/monitoring', label: 'Real-Time Monitoring', icon: Activity },
   { to: '/alerts', label: 'Alerts & Notifications', icon: Bell },
+  { to: '/executive-report', label: 'Executive Report', icon: FileText },
   { to: '/risk-detail', label: 'Risk Score Detail', icon: Gauge },
   { to: '/peers', label: 'Peer Benchmarking', icon: Users },
   { to: '/peer-groups', label: 'Peer Group Manager', icon: UserCog },

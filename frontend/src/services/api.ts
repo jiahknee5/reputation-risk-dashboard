@@ -662,3 +662,84 @@ export function voteFeedback(id: string): FeedbackItem[] {
 export function exportFeedbackJSON(): string {
   return JSON.stringify(getFeedback(), null, 2)
 }
+
+// --- Executive Report ---
+
+export interface BankRiskScore {
+  bank: string
+  ticker: string
+  compositeScore: number
+  change: number
+  trend: 'up' | 'down' | 'stable'
+  topDrivers: Array<{ name: string; score: number }>
+}
+
+export async function getBankRiskScores(): Promise<BankRiskScore[]> {
+  // Fetch dashboard overview and transform to BankRiskScore format
+  const overview = await getDashboardOverview()
+
+  return overview.map(item => ({
+    bank: item.bank.name,
+    ticker: item.bank.ticker,
+    compositeScore: item.composite_score,
+    change: Math.round((Math.random() - 0.5) * 20), // TODO: Calculate real change from history
+    trend: Math.random() > 0.6 ? 'up' : Math.random() > 0.3 ? 'stable' : 'down',
+    topDrivers: item.top_drivers,
+  }))
+}
+
+export interface Alert {
+  bank: string
+  severity: string
+  message: string
+  timestamp: string
+}
+
+export async function getAlerts(): Promise<Alert[]> {
+  // Fetch signals and convert high-severity ones to alerts
+  const signals = await getSignals(undefined, 50)
+
+  const alerts: Alert[] = []
+  for (const signal of signals) {
+    if (signal.is_anomaly || Math.abs(signal.sentiment_score) > 0.7) {
+      const bank = demo.getBanks().find(b => b.id === signal.bank_id)
+      if (!bank) continue
+
+      const severity = Math.abs(signal.sentiment_score) > 0.8 ? 'critical' :
+                      signal.is_anomaly ? 'high' : 'medium'
+
+      alerts.push({
+        bank: bank.name,
+        severity,
+        message: signal.title,
+        timestamp: signal.published_at || new Date().toISOString(),
+      })
+    }
+  }
+
+  return alerts.slice(0, 20)
+}
+
+// --- News Aggregator ---
+
+export interface NewsItem {
+  source: string
+  title: string
+  url: string
+  published: string
+  snippet: string
+  relevance: number
+}
+
+export async function newsAggregator(query: string, limit = 50): Promise<NewsItem[]> {
+  try {
+    const res = await fetch(`/api/reprisk/news?query=${encodeURIComponent(query)}&limit=${limit}`)
+    if (!res.ok) throw new Error(`News API ${res.status}`)
+
+    const data = await res.json()
+    return data.items || []
+  } catch (err) {
+    console.error('News aggregator error:', err)
+    return []
+  }
+}

@@ -14,6 +14,7 @@ import Feedback from './pages/Feedback'
 import ClawdChat from './pages/ClawdChat'
 import DataSources from './pages/DataSources'
 import Alerts from './pages/Alerts'
+import ExecutiveReport from './pages/ExecutiveReport'
 import { useTheme } from './hooks/useTheme'
 
 export default function App() {
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/monitoring" element={<Monitoring />} />
           <Route path="/alerts" element={<Alerts />} />
+          <Route path="/executive-report" element={<ExecutiveReport />} />
           <Route path="/risk-detail" element={<RiskDetail />} />
           <Route path="/peers" element={<PeerBenchmarking />} />
           <Route path="/peer-groups" element={<PeerGroups />} />
