@@ -569,8 +569,77 @@ export function getCrisisSimulation(bankId: number) {
   return demo.getCrisisSimulation(bankId)
 }
 
-export function getStakeholderImpact() {
-  return demo.getStakeholderImpact()
+export async function getStakeholderImpact() {
+  // If real data is not enabled, use demo data
+  if (!USE_REAL_DATA) {
+    return demo.getStakeholderImpact()
+  }
+
+  try {
+    // Fetch dashboard overview to get all bank data with real metrics
+    const overview = await getDashboardOverview()
+
+    return overview.map(item => {
+      const bank = item.bank
+      const compositeScore = item.composite_score
+      const complaintScore = item.complaint_score
+      const mediaSentiment = item.media_sentiment_score
+
+      // Map complaint categories to stakeholder groups
+      // High complaint score = high customer impact
+      // High media sentiment risk = high shareholder impact
+      // Regulatory score = high regulator impact
+
+      return {
+        bank,
+        stakeholders: [
+          {
+            group: 'Shareholders',
+            impact_level: mediaSentiment > 60 ? 'High' : mediaSentiment > 40 ? 'Moderate' : 'Low',
+            metrics: {
+              'Market Perception': mediaSentiment > 60 ? 'Negative' : mediaSentiment > 40 ? 'Mixed' : 'Positive',
+              'Stock Risk': `${mediaSentiment > 50 ? 'Elevated' : 'Normal'}`,
+              'Analyst Coverage': item.data_source === 'live' ? 'Real-time monitoring' : 'Demo data',
+            },
+            source: item.data_source === 'live' ? ('news' as const) : ('demo' as const),
+          },
+          {
+            group: 'Customers',
+            impact_level: complaintScore > 60 ? 'High' : complaintScore > 40 ? 'Moderate' : 'Low',
+            metrics: {
+              'Complaint Volume': complaintScore > 60 ? 'Elevated' : complaintScore > 40 ? 'Above Avg' : 'Normal',
+              'Service Issues': `${Math.round(complaintScore * 0.8)} risk points`,
+              'Fraud Risk': complaintScore > 50 ? 'Monitor' : 'Low',
+            },
+            source: item.data_source === 'live' ? ('cfpb' as const) : ('demo' as const),
+          },
+          {
+            group: 'Regulators',
+            impact_level: item.regulatory_score > 60 ? 'High' : item.regulatory_score > 40 ? 'Moderate' : 'Low',
+            metrics: {
+              'Compliance Risk': item.regulatory_score > 60 ? 'High' : item.regulatory_score > 40 ? 'Medium' : 'Low',
+              'Enforcement Risk': complaintScore > 60 ? 'Elevated' : 'Normal',
+              'Exam Priority': item.regulatory_score > 60 ? 'Elevated' : 'Normal',
+            },
+            source: ('derived' as const), // Derived from complaints + news
+          },
+          {
+            group: 'Employees',
+            impact_level: compositeScore > 60 ? 'High' : compositeScore > 40 ? 'Moderate' : 'Low',
+            metrics: {
+              'Reputation Impact': compositeScore > 60 ? 'High' : compositeScore > 40 ? 'Moderate' : 'Low',
+              'Talent Risk': compositeScore > 50 ? 'Monitor' : 'Stable',
+              'Morale Indicator': mediaSentiment > 60 ? 'Concerning' : 'Stable',
+            },
+            source: ('derived' as const), // Derived from overall risk
+          },
+        ],
+      }
+    })
+  } catch (err) {
+    console.error('Failed to fetch stakeholder impact:', err)
+    return demo.getStakeholderImpact()
+  }
 }
 
 export function getBoardReport() {

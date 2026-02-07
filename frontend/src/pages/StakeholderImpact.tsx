@@ -1,7 +1,8 @@
-import { useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import PageObjective from '../components/PageObjective'
 import InsightBox from '../components/InsightBox'
 import SectionObjective from '../components/SectionObjective'
+import DataSourceBadge from '../components/DataSourceBadge'
 import { getStakeholderImpact } from '../services/api'
 
 function impactBadge(level: string) {
@@ -25,12 +26,38 @@ const STAKEHOLDER_ICONS: Record<string, string> = {
 }
 
 export default function StakeholderImpact() {
-  const data = useMemo(() => getStakeholderImpact(), [])
+  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<any[]>([])
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const result = await getStakeholderImpact()
+        setData(result)
+      } catch (err) {
+        console.error('Failed to load stakeholder data:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading stakeholder data...</p>
+        </div>
+      </div>
+    )
+  }
 
   // Generate insight
   const allStakeholders = data.flatMap(b => b.stakeholders)
-  const highImpact = allStakeholders.filter(s => s.impact_level === 'High')
-  const mostAffectedGroup = highImpact.reduce((acc, s) => {
+  const highImpact = allStakeholders.filter((s: any) => s.impact_level === 'High')
+  const mostAffectedGroup = highImpact.reduce((acc: Record<string, number>, s: any) => {
     acc[s.group] = (acc[s.group] || 0) + 1
     return acc
   }, {} as Record<string, number>)
@@ -72,9 +99,9 @@ export default function StakeholderImpact() {
             </h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-gray-200 dark:divide-gray-800">
-            {bankData.stakeholders.map((stakeholder) => (
+            {bankData.stakeholders.map((stakeholder: any) => (
               <div key={stakeholder.group} className="p-4">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${
                       stakeholder.impact_level === 'High' ? 'bg-red-500' :
@@ -84,15 +111,20 @@ export default function StakeholderImpact() {
                   </div>
                   {impactBadge(stakeholder.impact_level)}
                 </div>
+                {'source' in stakeholder && stakeholder.source && (
+                  <div className="mb-3">
+                    <DataSourceBadge source={stakeholder.source} />
+                  </div>
+                )}
                 <div className="space-y-2">
-                  {Object.entries(stakeholder.metrics).map(([key, value]) => (
+                  {Object.entries(stakeholder.metrics).map(([key, value]: [string, any]) => (
                     <div key={key} className="flex justify-between text-xs">
-                      <span className="text-gray-500">{key}</span>
+                      <span className="text-gray-500 dark:text-gray-400">{key}</span>
                       <span className={`font-medium ${
-                        String(value).startsWith('-') || ['High', 'Elevated', 'Declining'].includes(String(value))
-                          ? 'text-red-400'
-                          : 'text-gray-700'
-                      }`}>{value}</span>
+                        String(value).startsWith('-') || ['High', 'Elevated', 'Declining', 'Negative', 'Monitor', 'Concerning'].includes(String(value))
+                          ? 'text-red-400 dark:text-red-400'
+                          : 'text-gray-700 dark:text-gray-300'
+                      }`}>{String(value)}</span>
                     </div>
                   ))}
                 </div>

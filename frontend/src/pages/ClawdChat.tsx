@@ -78,7 +78,7 @@ function buildDataContext(
   regulatory: ReturnType<typeof getRegulatoryIntel>,
   complaints: { product: string; count: number }[],
   crisisData: Record<number, ReturnType<typeof getCrisisSimulation>>,
-  stakeholders: ReturnType<typeof getStakeholderImpact>,
+  stakeholders: Awaited<ReturnType<typeof getStakeholderImpact>>,
   boardReport: ReturnType<typeof getBoardReport>,
   riskDetails: Record<number, ReturnType<typeof getRiskDetail>>,
 ): string {
@@ -317,7 +317,7 @@ export default function ClawdChat() {
           Promise.resolve(getPeerBenchmarking()),
           Promise.resolve(getRegulatoryIntel()),
           getComplaintSummary(),
-          Promise.resolve(getStakeholderImpact()),
+          getStakeholderImpact(), // Now async
           Promise.resolve(getBoardReport()),
         ])
 

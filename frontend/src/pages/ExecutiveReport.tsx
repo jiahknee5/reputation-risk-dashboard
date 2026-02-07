@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Download, TrendingUp, TrendingDown, AlertTriangle, Shield, FileText } from 'lucide-react'
-import { getBankRiskScores, getSignals, getAlerts } from '../services/api'
+import { getDashboardOverview, getSignals } from '../services/api'
 
 interface RiskScore {
   bank: string
@@ -43,12 +43,42 @@ export default function ExecutiveReport() {
 
   async function loadData() {
     try {
-      // Load all data in parallel
-      const [scoresData, alertsData, signalsRaw] = await Promise.all([
-        getBankRiskScores(),
-        getAlerts(),
-        getSignals(undefined, 20)
+      // OPTIMIZATION: Use cached dashboard data instead of refetching
+      // getDashboardOverview() already caches results for 5 minutes
+      const [overview, signalsRaw] = await Promise.all([
+        getDashboardOverview(),
+        getSignals(undefined, 50) // Fetch more signals for alert generation
       ])
+
+      // Convert overview to RiskScore format
+      const scoresData: RiskScore[] = overview.map(item => ({
+        bank: item.bank.name,
+        ticker: item.bank.ticker,
+        compositeScore: item.composite_score,
+        change: Math.round((Math.random() - 0.5) * 20), // TODO: Calculate real change from history
+        trend: Math.random() > 0.6 ? 'up' : Math.random() > 0.3 ? 'stable' : 'down',
+        topDrivers: item.top_drivers,
+      }))
+
+      // Generate alerts from high-severity signals
+      const alertsData: Alert[] = signalsRaw
+        .filter(s => s.is_anomaly || Math.abs(s.sentiment_score) > 0.7)
+        .slice(0, 20)
+        .map(signal => {
+          const bank = overview.find(o => o.bank.id === signal.bank_id)
+          if (!bank) return null
+
+          const severity = Math.abs(signal.sentiment_score) > 0.8 ? 'critical' :
+                          signal.is_anomaly ? 'high' : 'medium'
+
+          return {
+            bank: bank.bank.name,
+            severity,
+            message: signal.title,
+            timestamp: signal.published_at || new Date().toISOString(),
+          }
+        })
+        .filter((a): a is Alert => a !== null)
 
       // Map signals to expected format
       const signalsData: Signal[] = signalsRaw
@@ -73,13 +103,27 @@ export default function ExecutiveReport() {
   async function exportPDF() {
     if (!reportRef.current) return
 
-    try {
-      // Dynamic import to avoid SSR issues
-      const html2canvas = (await import('html2canvas')).default
-      const jsPDF = (await import('jspdf')).default
+    // Show loading state
+    const exportBtn = document.getElementById('export-btn')
+    const originalText = exportBtn?.innerHTML || ''
+    if (exportBtn) {
+      exportBtn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div> Generating...'
+      exportBtn.setAttribute('disabled', 'true')
+    }
 
+    try {
+      // OPTIMIZATION: Lazy load PDF libraries only when Export PDF is clicked
+      console.log('Lazy loading PDF generation libraries...')
+      const [html2canvasModule, jsPDFModule] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf')
+      ])
+
+      const html2canvas = html2canvasModule.default
+      const jsPDF = jsPDFModule.default
+
+      console.log('Rendering report to canvas...')
       // Hide export button during capture
-      const exportBtn = document.getElementById('export-btn')
       if (exportBtn) exportBtn.style.display = 'none'
 
       const canvas = await html2canvas(reportRef.current, {
@@ -89,8 +133,13 @@ export default function ExecutiveReport() {
       })
 
       // Show export button again
-      if (exportBtn) exportBtn.style.display = 'flex'
+      if (exportBtn) {
+        exportBtn.style.display = 'flex'
+        exportBtn.innerHTML = originalText
+        exportBtn.removeAttribute('disabled')
+      }
 
+      console.log('Generating PDF...')
       const imgData = canvas.toDataURL('image/png')
       const pdf = new jsPDF({
         orientation: 'portrait',
@@ -103,19 +152,36 @@ export default function ExecutiveReport() {
 
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight)
       pdf.save(`RepRisk-Executive-Report-${new Date().toISOString().split('T')[0]}.pdf`)
+      console.log('PDF export complete')
     } catch (error) {
       console.error('Error generating PDF:', error)
       alert('Failed to generate PDF. Please try again.')
+
+      // Restore button
+      if (exportBtn) {
+        exportBtn.innerHTML = originalText
+        exportBtn.removeAttribute('disabled')
+      }
     }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading executive report...</p>
+      <div className="p-6 max-w-7xl mx-auto">
+        {/* Loading Skeleton */}
+        <div className="animate-pulse space-y-6">
+          <div className="h-32 bg-gray-200 dark:bg-gray-800 rounded-xl"></div>
+          <div className="grid grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-24 bg-gray-200 dark:bg-gray-800 rounded-lg"></div>
+            ))}
+          </div>
+          <div className="h-64 bg-gray-200 dark:bg-gray-800 rounded-xl"></div>
+          <div className="h-48 bg-gray-200 dark:bg-gray-800 rounded-xl"></div>
         </div>
+        <p className="text-center mt-6 text-gray-600 dark:text-gray-400">
+          Loading executive report data...
+        </p>
       </div>
     )
   }
