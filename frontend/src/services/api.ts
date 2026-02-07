@@ -265,17 +265,25 @@ export async function getDashboardOverview(): Promise<DashboardOverview[]> {
   const cached = getCached<DashboardOverview[]>(cacheKey)
   if (cached) return cached
 
-  const banks = demo.getBanks()
+  // Load only US Bank, Category I (G-SIBs), and Category II peers
+  // US Bank: 1
+  // Category I (above): 2, 3, 4, 7, 8, 9, 10, 11
+  // Category II (peers): 5, 6, 12, 13, 14, 15, 16
+  const priorityBankIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+  const allBanks = demo.getBanks()
+  const banks = allBanks.filter(b => priorityBankIds.includes(b.id))
 
-  // If real data is not enabled, use demo data immediately
+  // If real data is not enabled, use demo data immediately (filtered to priority banks)
   if (!USE_REAL_DATA) {
     console.log('Real data disabled, using demo dashboard')
-    return demo.getDashboardOverview().map(d => ({
-      ...d,
-      regulatory_score: Math.round(d.composite_score + (Math.random() - 0.5) * 10),
-      esg_flags: [],
-      data_source: 'demo' as const,
-    }))
+    return demo.getDashboardOverview()
+      .filter(d => priorityBankIds.includes(d.bank.id))
+      .map(d => ({
+        ...d,
+        regulatory_score: Math.round(d.composite_score + (Math.random() - 0.5) * 10),
+        esg_flags: [],
+        data_source: 'demo' as const,
+      }))
   }
 
   try {
