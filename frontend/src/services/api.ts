@@ -269,7 +269,8 @@ export async function getDashboardOverview(): Promise<DashboardOverview[]> {
   // US Bank: 1
   // Category I (above): 2, 3, 4, 7, 8, 9, 10, 11
   // Category II (peers): 5, 6, 12, 13, 14, 15, 16
-  const priorityBankIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+  // Reduced initial load to 8 banks to prevent API overload. Add more via pagination.
+  const priorityBankIds = [1, 2, 3, 4, 5, 6, 7, 8]
   const allBanks = demo.getBanks()
   const banks = allBanks.filter(b => priorityBankIds.includes(b.id))
 
