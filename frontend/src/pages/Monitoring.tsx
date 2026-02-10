@@ -79,6 +79,7 @@ function sourceBadge(source: string) {
     cfpb: 'bg-orange-500/20 text-orange-400',
     regulatory: 'bg-red-500/20 text-red-400',
     market: 'bg-cyan-500/20 text-cyan-400',
+    x: 'bg-gray-700/30 text-gray-300',
   }
   return (
     <span className={`px-2 py-0.5 rounded-full text-xs ${colors[source] || 'bg-gray-500/20 text-gray-600'}`}>
@@ -141,17 +142,18 @@ export default function Monitoring() {
 
   // Aggregate volume by date AND source for stacked chart
   const volumeByDate = useMemo(() => {
-    const byDate: Record<string, { date: string; news: number; social: number; cfpb: number; regulatory: number; market: number }> = {}
+    const byDate: Record<string, { date: string; news: number; social: number; cfpb: number; regulatory: number; market: number; x: number }> = {}
 
     volume.forEach(v => {
       if (!byDate[v.date]) {
-        byDate[v.date] = { date: v.date, news: 0, social: 0, cfpb: 0, regulatory: 0, market: 0 }
+        byDate[v.date] = { date: v.date, news: 0, social: 0, cfpb: 0, regulatory: 0, market: 0, x: 0 }
       }
       if (v.source === 'news') byDate[v.date].news += v.count
       else if (v.source === 'social') byDate[v.date].social += v.count
       else if (v.source === 'cfpb') byDate[v.date].cfpb += v.count
       else if (v.source === 'regulatory') byDate[v.date].regulatory += v.count
       else if (v.source === 'market') byDate[v.date].market += v.count
+      else if (v.source === 'x') byDate[v.date].x += v.count
     })
 
     return Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date))
@@ -266,6 +268,7 @@ export default function Monitoring() {
             <Bar dataKey="cfpb" stackId="a" fill="#f97316" />
             <Bar dataKey="regulatory" stackId="a" fill="#ef4444" />
             <Bar dataKey="market" stackId="a" fill="#06b6d4" />
+            <Bar dataKey="x" stackId="a" fill="#6b7280" />
           </BarChart>
         </ResponsiveContainer>
         <div className="flex items-center gap-4 mt-4 text-xs">
@@ -320,6 +323,7 @@ export default function Monitoring() {
               <option value="cfpb">CFPB</option>
               <option value="regulatory">Regulatory</option>
               <option value="market">Market</option>
+              <option value="x">X/Twitter</option>
             </select>
             {(selectedDate || selectedSource) && (
               <button

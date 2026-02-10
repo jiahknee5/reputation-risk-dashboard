@@ -493,6 +493,31 @@ export async function getSignals(bankId?: number, limit = 100) {
     } catch (err) {
       console.error(`Failed to fetch GDELT news for ${bank.name}:`, err)
     }
+
+    // X/Twitter signals (scraped via local tool, stored in Redis)
+    try {
+      const xRes = await fetch(`/api/reprisk/x?bank_id=${bank.id}&limit=30`)
+      if (xRes.ok) {
+        const xData = await xRes.json()
+        const xSignals = xData.signals || []
+        for (const xs of xSignals) {
+          liveSignals.push({
+            id: id++,
+            bank_id: bank.id,
+            source: 'x',
+            title: xs.title || 'X post',
+            content: xs.content?.slice(0, 280) || null,
+            url: xs.url || null,
+            published_at: xs.published_at || null,
+            sentiment_score: xs.sentiment_score || 0,
+            sentiment_label: xs.sentiment_label || 'neutral',
+            is_anomaly: xs.is_anomaly || false,
+          })
+        }
+      }
+    } catch (err) {
+      console.error(`Failed to fetch X signals for ${bank.name}:`, err)
+    }
   }
 
   // Sort by date descending (most recent first)
@@ -807,6 +832,51 @@ export interface NewsItem {
   published: string
   snippet: string
   relevance: number
+}
+
+// --- Data Source Counts (for Executive Summary) ---
+
+export interface DataSourceCounts {
+  x: { count: number; label: string }
+  news: { count: number; label: string }
+  cfpb: { count: number; label: string }
+}
+
+export async function getDataSourceCounts(bankTicker: string): Promise<DataSourceCounts> {
+  const result: DataSourceCounts = {
+    x: { count: 0, label: 'X/Twitter signals' },
+    news: { count: 0, label: 'News articles' },
+    cfpb: { count: 0, label: 'CFPB complaints (90d)' },
+  }
+
+  const bank = demo.getBanks().find(b => b.ticker === bankTicker)
+  if (!bank) return result
+
+  // Fetch X signals count
+  try {
+    const xRes = await fetch(`/api/reprisk/x?bank=${bankTicker}&limit=200`)
+    if (xRes.ok) {
+      const xData = await xRes.json()
+      result.x.count = xData.total || (xData.signals || []).length
+    }
+  } catch { /* graceful */ }
+
+  // Fetch news signals count from Redis
+  try {
+    const newsRes = await fetch(`/api/reprisk/news?query=${encodeURIComponent(bank.name)}&limit=200`)
+    if (newsRes.ok) {
+      const newsData = await newsRes.json()
+      result.news.count = newsData.total || (newsData.items || []).length
+    }
+  } catch { /* graceful */ }
+
+  // CFPB complaint count
+  try {
+    const complaints = await fetchAllBankComplaints(bank.name, 90)
+    result.cfpb.count = complaints.length
+  } catch { /* graceful */ }
+
+  return result
 }
 
 export async function newsAggregator(query: string, limit = 50): Promise<NewsItem[]> {

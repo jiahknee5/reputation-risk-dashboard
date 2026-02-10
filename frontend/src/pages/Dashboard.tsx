@@ -1,34 +1,21 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import RiskGauge from '../components/RiskGauge'
-import AlertBanner from '../components/AlertBanner'
-import Watchlist from '../components/Watchlist'
-import { WatchlistToggle } from '../components/Watchlist'
-import PageObjective from '../components/PageObjective'
 import InsightBox from '../components/InsightBox'
-import SectionObjective from '../components/SectionObjective'
 import DetailModal from '../components/DetailModal'
-import { getDashboardOverview, getRiskHistory, getAlertThresholds, type DashboardOverview } from '../services/api'
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from 'recharts'
+  getDashboardOverview, getDataSourceCounts,
+  type DashboardOverview, type DataSourceCounts,
+} from '../services/api'
+import { CATEGORY_I_IDS, CATEGORY_II_IDS } from '../data/demo'
+import { Twitter, Newspaper, FileWarning, Send, Bot, User, Loader2 } from 'lucide-react'
 
-interface PeerGroup {
-  id: string
-  name: string
-  description: string
-  bankIds: number[]
-  createdAt: number
-  updatedAt: number
-}
-
-function loadPeerGroups(): PeerGroup[] {
-  try {
-    const stored = localStorage.getItem('reprisk-peer-groups')
-    return stored ? JSON.parse(stored) : []
-  } catch {
-    return []
-  }
-}
+// Reuse the chat logic from ClawdChat
+import {
+  getDashboardOverview as getDashOverview, getRiskDetail, getPeerBenchmarking,
+  getRegulatoryIntel, getCrisisSimulation, getStakeholderImpact,
+  getBoardReport, getComplaintSummary,
+} from '../services/api'
 
 function DriverBar({ name, score }: { name: string; score: number }) {
   const width = Math.max(0, Math.min(100, score))
@@ -36,7 +23,7 @@ function DriverBar({ name, score }: { name: string; score: number }) {
     score < 30 ? 'bg-green-500' : score < 50 ? 'bg-yellow-500' : score < 70 ? 'bg-orange-500' : 'bg-red-500'
   return (
     <div className="flex items-center gap-2 text-xs">
-      <span className="w-24 text-gray-700 dark:text-gray-300 truncate text-[11px]">{name}</span>
+      <span className="w-28 text-gray-700 dark:text-gray-300 truncate text-[11px]">{name}</span>
       <div className="flex-1 bg-gray-50 dark:bg-gray-800 rounded-full h-1.5">
         <div className={`${color} h-1.5 rounded-full`} style={{ width: `${width}%` }} />
       </div>
@@ -45,100 +32,172 @@ function DriverBar({ name, score }: { name: string; score: number }) {
   )
 }
 
-function ESGBadge({ theme, count }: { theme: string; count: number }) {
-  const colors: Record<string, string> = {
-    S: 'bg-blue-500/20 text-blue-400',
-    G: 'bg-purple-500/20 text-purple-400',
-    E: 'bg-green-500/20 text-green-400',
-  }
-  const labels: Record<string, string> = { S: 'Social', G: 'Governance', E: 'Environmental' }
+function DataSourceCard({
+  icon: Icon,
+  label,
+  count,
+  sublabel,
+  color,
+  onClick,
+}: {
+  icon: React.ElementType
+  label: string
+  count: number
+  sublabel: string
+  color: string
+  onClick: () => void
+}) {
   return (
-    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${colors[theme] || 'bg-gray-500/20 text-gray-600'}`}>
-      {labels[theme] || theme} ({count})
-    </span>
+    <button
+      onClick={onClick}
+      className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 text-left hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all"
+    >
+      <div className="flex items-center gap-3 mb-2">
+        <div className={`w-8 h-8 rounded-lg ${color} flex items-center justify-center`}>
+          <Icon size={16} className="text-white" />
+        </div>
+        <span className="text-sm font-medium text-gray-900 dark:text-white">{label}</span>
+      </div>
+      <div className="text-2xl font-bold text-gray-900 dark:text-white">{count.toLocaleString()}</div>
+      <div className="text-[10px] text-gray-500 mt-1">{sublabel}</div>
+    </button>
   )
 }
 
-function DataSourceBadge({ source }: { source: 'live' | 'demo' }) {
+function CategoryGroup({
+  title,
+  subtitle,
+  banks,
+  primaryTicker,
+  onBankClick,
+}: {
+  title: string
+  subtitle: string
+  banks: DashboardOverview[]
+  primaryTicker?: string
+  onBankClick: (bank: DashboardOverview) => void
+}) {
   return (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-      source === 'live' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
-    }`}>
-      {source === 'live' ? 'Live Data' : 'Demo Data'}
-    </span>
+    <div>
+      <div className="mb-2">
+        <h3 className="text-sm font-medium text-gray-900 dark:text-white">{title}</h3>
+        <p className="text-[10px] text-gray-500">{subtitle}</p>
+      </div>
+      <div className="flex flex-wrap gap-3">
+        {banks.map(b => (
+          <button
+            key={b.bank.id}
+            onClick={() => onBankClick(b)}
+            className={`flex flex-col items-center p-2 rounded-lg transition-all hover:bg-gray-100 dark:hover:bg-gray-800 ${
+              b.bank.ticker === primaryTicker
+                ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                : ''
+            }`}
+          >
+            <RiskGauge score={b.composite_score} label={b.bank.ticker} size="sm" />
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }
 
 export default function Dashboard() {
-  const [allOverview, setAllOverview] = useState<DashboardOverview[]>([])
+  const navigate = useNavigate()
+  const [overview, setOverview] = useState<DashboardOverview[]>([])
   const [loading, setLoading] = useState(true)
-  const [history, setHistory] = useState<{ date: string; composite_score: number }[]>([])
-  const [peerGroups, setPeerGroups] = useState<PeerGroup[]>([])
-  const [selectedGroupId, setSelectedGroupId] = useState<string>('')
+  const [dataCounts, setDataCounts] = useState<DataSourceCounts | null>(null)
   const [selectedBankForModal, setSelectedBankForModal] = useState<DashboardOverview | null>(null)
-  const [primaryBankId, setPrimaryBankId] = useState<number | null>(null)
+
+  // Inline chat state
+  const [chatInput, setChatInput] = useState('')
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([])
+  const [chatLoading, setChatLoading] = useState(false)
+  const [systemPrompt, setSystemPrompt] = useState<string | null>(null)
+  const chatEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     getDashboardOverview().then(data => {
-      setAllOverview(data)
+      setOverview(data)
       setLoading(false)
-      if (data.length > 0) {
-        getRiskHistory(data[0].bank.id).then(setHistory)
-      }
     })
-    setPeerGroups(loadPeerGroups())
+    getDataSourceCounts('USB').then(setDataCounts)
   }, [])
 
-  // Filter by peer group
-  const overview = useMemo(() => {
-    if (!selectedGroupId) return allOverview
+  // Load chat context
+  useEffect(() => {
+    async function loadChatContext() {
+      try {
+        const [overviewData, peerData, regulatory, complaints, stakeholders, boardReport] = await Promise.all([
+          getDashOverview(),
+          Promise.resolve(getPeerBenchmarking()),
+          Promise.resolve(getRegulatoryIntel()),
+          getComplaintSummary(),
+          getStakeholderImpact(),
+          Promise.resolve(getBoardReport()),
+        ])
 
-    const group = peerGroups.find(g => g.id === selectedGroupId)
-    if (!group) return allOverview
+        let ctx = `You are a Risk Analyst. Be concise (max 100 words). Use bullet points. Cite sources with [CFPB], [Dashboard], etc.\n\n## DATA\n`
+        ctx += `Ticker|Composite|Media|Complaints|Market|Regulatory\n`
+        for (const b of overviewData) {
+          ctx += `${b.bank.ticker}|${Math.round(b.composite_score)}|${Math.round(b.media_sentiment_score)}|${Math.round(b.complaint_score)}|${Math.round(b.market_score)}|${Math.round(b.regulatory_score)}\n`
+        }
+        ctx += `\nPeer avg: ${peerData.peer_average}\n`
+        ctx += `Enforcement actions: ${regulatory.enforcementActions.length}\n`
+        ctx += `Board summary: ${boardReport.executive_summary.slice(0, 200)}\n`
 
-    return allOverview.filter(b => group.bankIds.includes(b.bank.id))
-  }, [allOverview, selectedGroupId, peerGroups])
+        setSystemPrompt(ctx)
+      } catch {
+        setSystemPrompt('You are a Risk Analyst. Be concise. Use bullet points.')
+      }
+    }
+    loadChatContext()
+  }, [])
 
-  const topBank = overview[0]
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMessages])
+
+  const sendChat = useCallback(async (content: string) => {
+    if (!content.trim() || !systemPrompt) return
+    const userMsg = { role: 'user' as const, content: content.trim() }
+    const newMsgs = [...chatMessages, userMsg]
+    setChatMessages(newMsgs)
+    setChatInput('')
+    setChatLoading(true)
+
+    try {
+      const resp = await fetch('/api/reprisk/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system: systemPrompt,
+          messages: newMsgs.map(m => ({ role: m.role, content: m.content })),
+        }),
+      })
+      if (!resp.ok) throw new Error(`API error ${resp.status}`)
+      const data = await resp.json()
+      const assistantContent = data.content?.[0]?.text || 'No response'
+      setChatMessages([...newMsgs, { role: 'assistant', content: assistantContent }])
+    } catch {
+      setChatMessages([...newMsgs, { role: 'assistant', content: 'Unable to reach the analyst. Try the full chat page.' }])
+    } finally {
+      setChatLoading(false)
+    }
+  }, [chatMessages, systemPrompt])
+
+  // Derived data
   const primaryBank = overview.find(b => b.bank.ticker === 'USB') || overview[0]
+  const catIBanks = overview.filter(b => CATEGORY_I_IDS.includes(b.bank.id))
+  const catIIBanks = overview.filter(b => CATEGORY_II_IDS.includes(b.bank.id))
+  const peerAvg = overview.length > 0
+    ? Math.round(overview.reduce((sum, b) => sum + b.composite_score, 0) / overview.length)
+    : 0
 
-  // Generate alerts from thresholds and scores
-  const thresholds = getAlertThresholds()
-  const alerts = overview
-    .filter(b => {
-      const t = thresholds.find(th => th.bankId === b.bank.id)
-      return b.composite_score >= 70 || (t && b.composite_score >= t.maxScore)
-    })
-    .map(b => ({
-      id: `alert-${b.bank.id}`,
-      severity: (b.composite_score >= 70 ? 'critical' : 'high') as 'critical' | 'high',
-      message: `${b.bank.name} (${b.bank.ticker}) composite score at ${Math.round(b.composite_score)} — above threshold`,
-      bank: b.bank.ticker,
-    }))
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Executive Dashboard</h2>
-          <p className="text-sm text-gray-500 mt-1">Loading real-time data...</p>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 h-64 animate-pulse" />
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  // Generate insight for US Bank
-  const peerAvg = overview.length > 0 ? Math.round(overview.reduce((sum, b) => sum + b.composite_score, 0) / overview.length) : 0
+  // Generate insight
   const usbInsight = primaryBank ? (() => {
     const score = primaryBank.composite_score
-    const drivers = primaryBank.top_drivers
-    const topDriver = drivers[0]
-
+    const topDriver = primaryBank.top_drivers[0]
     if (score >= 70) {
       return {
         type: 'action' as const,
@@ -149,171 +208,197 @@ export default function Dashboard() {
     } else if (score >= 50) {
       return {
         type: 'warning' as const,
-        title: `${primaryBank.bank.name} shows elevated risk vs peers`,
+        title: `${primaryBank.bank.name} shows elevated risk`,
         message: `Composite score ${Math.round(score)} above peer average (${peerAvg}). Key driver: ${topDriver.name}.`,
-        detail: 'Monitor closely for further deterioration.'
       }
     } else if (score <= 30) {
       return {
         type: 'positive' as const,
         title: `${primaryBank.bank.name} positioned favorably`,
-        message: `Composite score ${Math.round(score)} well below peer average (${peerAvg}), indicating strong reputation positioning.`,
-        detail: 'Continue current risk management practices.'
+        message: `Composite score ${Math.round(score)} below peer average (${peerAvg}). Strong reputation positioning.`,
       }
-    } else {
-      return {
-        type: 'finding' as const,
-        title: `${primaryBank.bank.name} within normal range`,
-        message: `Composite score ${Math.round(score)} aligned with peer average (${peerAvg}). Top driver: ${topDriver.name} (${Math.round(topDriver.score)}).`
-      }
+    }
+    return {
+      type: 'finding' as const,
+      title: `${primaryBank.bank.name} within normal range`,
+      message: `Composite score ${Math.round(score)} aligned with peer average (${peerAvg}). Top driver: ${topDriver.name} (${Math.round(topDriver.score)}).`,
     }
   })() : null
 
-  const selectedGroup = peerGroups.find(g => g.id === selectedGroupId)
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Executive Summary</h2>
+          <p className="text-sm text-gray-500 mt-1">Loading real-time data...</p>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 h-24 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="space-y-4">
-      <PageObjective
-        title="Executive Dashboard"
-        objective="Identify which institutions require immediate attention"
-        description={`Real-time composite reputation risk ${selectedGroup ? `for ${selectedGroup.name}` : 'across all Category I/II/III banks'} with live CFPB complaint data, news sentiment, and regulatory signals.`}
-      >
-        <div className="flex items-center gap-2">
-          <select
-            className="bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg px-3 py-2 text-sm"
-            value={selectedGroupId}
-            onChange={(e) => setSelectedGroupId(e.target.value)}
-          >
-            <option value="">All Institutions ({allOverview.length})</option>
-            {peerGroups.map(group => (
-              <option key={group.id} value={group.id}>
-                {group.name} ({allOverview.filter(b => group.bankIds.includes(b.bank.id)).length} banks)
-              </option>
-            ))}
-          </select>
-          {topBank && <DataSourceBadge source={topBank.data_source} />}
-        </div>
-      </PageObjective>
-
-      {usbInsight && <InsightBox {...usbInsight} />}
-      <AlertBanner alerts={alerts} />
-
-      <SectionObjective
-        title="Quick Insights"
-        objective="Primary focus bank and peer comparisons provide executive-level snapshot of portfolio positioning and relative risk exposure at a glance."
-        type="info"
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        {/* Primary score card - US Bank */}
-        {primaryBank && (
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 flex flex-col items-center gap-3">
-            <div className="flex items-center gap-2 w-full">
-              <div className="flex-1">
-                <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-                  {primaryBank.bank.name}
-                </h3>
-                <p className="text-[10px] text-gray-500">Primary Score</p>
-              </div>
-              <WatchlistToggle bankId={primaryBank.bank.id} />
-            </div>
-            <RiskGauge score={primaryBank.composite_score} label="Composite" />
-            {primaryBank.esg_flags.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {primaryBank.esg_flags.slice(0, 3).map(f => (
-                  <ESGBadge key={f.theme} theme={f.theme} count={f.count} />
-                ))}
-              </div>
-            )}
-            <div className="w-full space-y-1.5 mt-1">
-              {primaryBank.top_drivers.map(d => (
-                <DriverBar key={d.name} name={d.name} score={d.score} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Peer ranking */}
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
-          <div className="mb-3">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white">Peer Ranking</h3>
-            <p className="text-[10px] text-gray-500">23 Cat I/II/III Banks</p>
-          </div>
-          <div className="flex flex-wrap gap-3 justify-center">
-            {overview.slice(0, 8).map(b => (
-              <RiskGauge key={b.bank.id} score={b.composite_score} label={b.bank.ticker} size="sm" />
-            ))}
-          </div>
-        </div>
-
-        {/* Trend chart */}
-        {primaryBank && (
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
-            <div className="mb-3">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-                60-Day Trend
-              </h3>
-              <p className="text-[10px] text-gray-500">{primaryBank.bank.ticker} Composite Score</p>
-            </div>
-            <ResponsiveContainer width="100%" height={160}>
-              <LineChart data={history}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
-                <YAxis domain={[0, 100]} tick={{ fill: '#9ca3af', fontSize: 10 }} />
-                <Tooltip contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151' }} labelStyle={{ color: '#d1d5db' }} />
-                <Line type="monotone" dataKey="composite_score" stroke="#3b82f6" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-
-        {/* Watchlist */}
-        <Watchlist />
+    <div className="space-y-5">
+      {/* Header */}
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Executive Summary</h2>
+        <p className="text-sm text-gray-500 mt-1">US Bancorp (USB) — Reputation Risk Intelligence</p>
       </div>
 
-      {/* Bank detail cards */}
-      <SectionObjective
-        title="Portfolio-Wide View"
-        objective="Complete heat map across all Category I/II/III banks identifies emerging concentrations of risk before they cascade into systemic issues."
-        type={overview.some(b => b.composite_score >= 70) ? 'action' : 'watch'}
-      />
-
+      {/* Section A: What We Measure */}
       <div>
-        <div className="mb-2">
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white">All Institutions</h3>
-          <p className="text-[10px] text-gray-500">Category I/II/III Banks — Sorted by Risk</p>
+        <h3 className="text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider mb-2">What We Measure</h3>
+        <div className="grid grid-cols-3 gap-3">
+          <DataSourceCard
+            icon={Twitter}
+            label="X / Twitter"
+            count={dataCounts?.x.count ?? 0}
+            sublabel="Social signals tracked"
+            color="bg-gray-800"
+            onClick={() => navigate('/monitoring?source=x')}
+          />
+          <DataSourceCard
+            icon={Newspaper}
+            label="News Articles"
+            count={dataCounts?.news.count ?? 0}
+            sublabel="RSS + GDELT sources"
+            color="bg-blue-600"
+            onClick={() => navigate('/monitoring?source=news')}
+          />
+          <DataSourceCard
+            icon={FileWarning}
+            label="CFPB Complaints"
+            count={dataCounts?.cfpb.count ?? 0}
+            sublabel="Consumer complaints (90 days)"
+            color="bg-orange-500"
+            onClick={() => navigate('/monitoring?source=cfpb')}
+          />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-          {overview.map(b => (
-            <div
-              key={b.bank.id}
-              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 hover:border-gray-300 dark:border-gray-700 hover:scale-105 transition-all cursor-pointer"
-              onClick={() => setSelectedBankForModal(b)}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <WatchlistToggle bankId={b.bank.id} />
-                  <div className="flex-1 min-w-0">
-                    <span className="font-medium text-gray-900 dark:text-white text-sm block truncate">{b.bank.name}</span>
-                    <span className="text-gray-500 text-[10px]">{b.bank.ticker}</span>
-                  </div>
-                </div>
-                <RiskGauge score={b.composite_score} label="" size="sm" />
-              </div>
-              {b.esg_flags.length > 0 && (
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {b.esg_flags.slice(0, 2).map(f => (
-                    <ESGBadge key={f.theme} theme={f.theme} count={f.count} />
-                  ))}
-                </div>
-              )}
-              <div className="space-y-1">
-                <DriverBar name="Media" score={b.media_sentiment_score} />
-                <DriverBar name="Complaints" score={b.complaint_score} />
-                <DriverBar name="Market" score={b.market_score} />
+      </div>
+
+      {/* Section B: What's at Risk */}
+      {primaryBank && (
+        <div>
+          <h3 className="text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider mb-2">What's at Risk</h3>
+          {usbInsight && <InsightBox {...usbInsight} />}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-3">
+            {/* Composite Score */}
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 flex flex-col items-center gap-3">
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white">{primaryBank.bank.name}</h4>
+              <RiskGauge score={primaryBank.composite_score} label="Composite" />
+              <p className="text-[10px] text-gray-500">vs peer avg: {peerAvg}</p>
+            </div>
+
+            {/* Risk Drivers */}
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 lg:col-span-2">
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Risk Drivers</h4>
+              <div className="space-y-2">
+                <DriverBar name="Media Sentiment" score={primaryBank.media_sentiment_score} />
+                <DriverBar name="Consumer Complaints" score={primaryBank.complaint_score} />
+                <DriverBar name="Market Signal" score={primaryBank.market_score} />
+                <DriverBar name="Regulatory" score={primaryBank.regulatory_score} />
               </div>
             </div>
-          ))}
+          </div>
+        </div>
+      )}
+
+      {/* Section C: Peer Groups */}
+      <div>
+        <h3 className="text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider mb-3">Peer Comparison</h3>
+        <div className="space-y-4">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+            <CategoryGroup
+              title="Category I — G-SIBs"
+              subtitle="Global Systemically Important Banks"
+              banks={catIBanks}
+              onBankClick={setSelectedBankForModal}
+            />
+          </div>
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+            <CategoryGroup
+              title="Category II — Large Regional"
+              subtitle="$250B+ assets"
+              banks={catIIBanks}
+              primaryTicker="USB"
+              onBankClick={setSelectedBankForModal}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Section D: Quick Ask */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">Quick Ask</h3>
+          <button
+            onClick={() => navigate('/chat')}
+            className="text-xs text-blue-500 hover:text-blue-400 transition-colors"
+          >
+            Open full chat &rarr;
+          </button>
+        </div>
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+          {/* Recent messages (show last 2) */}
+          {chatMessages.length > 0 && (
+            <div className="max-h-48 overflow-y-auto p-3 space-y-2 border-b border-gray-200 dark:border-gray-800">
+              {chatMessages.slice(-4).map((msg, i) => (
+                <div key={i} className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                  {msg.role === 'assistant' && (
+                    <div className="w-6 h-6 rounded-full bg-blue-600/20 flex items-center justify-center shrink-0">
+                      <Bot size={12} className="text-blue-400" />
+                    </div>
+                  )}
+                  <div className={`max-w-[85%] rounded-lg px-3 py-2 text-xs ${
+                    msg.role === 'user'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                  }`}>
+                    {msg.content}
+                  </div>
+                  {msg.role === 'user' && (
+                    <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center shrink-0">
+                      <User size={12} className="text-gray-500" />
+                    </div>
+                  )}
+                </div>
+              ))}
+              {chatLoading && (
+                <div className="flex gap-2">
+                  <div className="w-6 h-6 rounded-full bg-blue-600/20 flex items-center justify-center shrink-0">
+                    <Loader2 size={12} className="text-blue-400 animate-spin" />
+                  </div>
+                  <span className="text-xs text-gray-500">Thinking...</span>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+          )}
+
+          {/* Input bar */}
+          <form
+            onSubmit={(e) => { e.preventDefault(); sendChat(chatInput) }}
+            className="flex gap-2 p-3"
+          >
+            <input
+              value={chatInput}
+              onChange={e => setChatInput(e.target.value)}
+              placeholder="Ask about USB risk, peer comparison, CFPB trends..."
+              className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-600"
+              disabled={chatLoading || !systemPrompt}
+            />
+            <button
+              type="submit"
+              disabled={chatLoading || !chatInput.trim() || !systemPrompt}
+              className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-50 transition-colors"
+            >
+              <Send size={14} />
+            </button>
+          </form>
         </div>
       </div>
 
@@ -327,24 +412,9 @@ export default function Dashboard() {
           size="lg"
         >
           <div className="space-y-6">
-            {/* Composite Score */}
             <div className="flex items-center justify-center">
               <RiskGauge score={selectedBankForModal.composite_score} label="Composite Score" />
             </div>
-
-            {/* ESG Flags */}
-            {selectedBankForModal.esg_flags.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">ESG Risk Themes</h4>
-                <div className="flex flex-wrap gap-2">
-                  {selectedBankForModal.esg_flags.map(f => (
-                    <ESGBadge key={f.theme} theme={f.theme} count={f.count} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Component Breakdown */}
             <div>
               <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">Risk Component Scores</h4>
               <div className="space-y-3">
@@ -354,8 +424,6 @@ export default function Dashboard() {
                 <DriverBar name="Regulatory" score={selectedBankForModal.regulatory_score} />
               </div>
             </div>
-
-            {/* Top Drivers */}
             <div>
               <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">Top Risk Drivers</h4>
               <div className="space-y-2">
@@ -368,11 +436,6 @@ export default function Dashboard() {
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* Data Source */}
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
-              <DataSourceBadge source={selectedBankForModal.data_source} />
             </div>
           </div>
         </DetailModal>

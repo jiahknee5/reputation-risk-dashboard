@@ -30,6 +30,10 @@ export interface BankInfo {
 // Fed Category II: $250B-$700B assets
 // Fed Category III: $100B-$250B assets
 
+export const CATEGORY_I_IDS = [2, 4, 7, 3, 8, 9, 10, 11]   // G-SIBs
+export const CATEGORY_II_IDS = [1, 5, 6, 12, 13, 14, 15, 16] // Large Regional
+export const CATEGORY_III_IDS = [17, 18, 19, 20, 21, 22, 23]  // Regional
+
 export const BANKS: BankInfo[] = [
   // Category I (8 GSIBs)
   { id: 2, name: 'JPMorgan Chase', ticker: 'JPM' },

@@ -1,6 +1,6 @@
-import { Database, FileText, Globe, TestTube } from 'lucide-react'
+import { Database, FileText, Globe, MessageCircle, TestTube } from 'lucide-react'
 
-type DataSource = 'cfpb' | 'news' | 'gdelt' | 'demo' | 'derived'
+type DataSource = 'cfpb' | 'news' | 'gdelt' | 'demo' | 'derived' | 'x'
 
 interface DataSourceBadgeProps {
   source: DataSource
@@ -43,6 +43,12 @@ const SOURCE_CONFIG: Record<DataSource, {
     label: 'Derived',
     color: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
     defaultTooltip: 'Derived from CFPB + News sentiment'
+  },
+  x: {
+    icon: MessageCircle,
+    label: 'X',
+    color: 'bg-gray-800/30 text-gray-200 border-gray-600/30',
+    defaultTooltip: 'X/Twitter social signals (scraped, updated every 15 min)'
   }
 }
 
