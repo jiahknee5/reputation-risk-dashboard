@@ -861,12 +861,12 @@ export async function getDataSourceCounts(bankTicker: string): Promise<DataSourc
     }
   } catch { /* graceful */ }
 
-  // Fetch news signals count from Redis
+  // Fetch scraped news signals count from Redis
   try {
-    const newsRes = await fetch(`/api/reprisk/news?query=${encodeURIComponent(bank.name)}&limit=200`)
+    const newsRes = await fetch(`/api/reprisk/scraped-news?bank=${bankTicker}&limit=200`)
     if (newsRes.ok) {
       const newsData = await newsRes.json()
-      result.news.count = newsData.total || (newsData.items || []).length
+      result.news.count = newsData.total || (newsData.signals || []).length
     }
   } catch { /* graceful */ }
 
